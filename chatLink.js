@@ -1,0 +1,1 @@
+$("a[href='/listgreetings.phtml'").after(" | <a href = '/neomessages.phtml?folder=neochat'>neochat</a>");
