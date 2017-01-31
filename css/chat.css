@@ -5,7 +5,7 @@
 .ui .write {
   margin: auto;
   margin-bottom: 15px;
-  min-height: 120px;
+  height: 120px;
   padding: 5px 8px;
   border: 1px solid lightblue;
   background-color: #eceff1;
@@ -16,7 +16,7 @@
 .ui .write textarea {
   font-size: 14px;
   width: 100%;
-  min-height: calc(100% - 16px);
+  height: calc(100% - 20px);
   color: rgb(0, 176, 255);
   border: 0;
   outline: none;
@@ -192,11 +192,11 @@
 
 @-webkit-keyframes slideFromDown {
   0% {
-    top: 0;
+    bottom: 0;
     opacity: 0;
   }
   100% {
-    top: -290%;
+    bottom: 25%;
     opacity: 1;
   }
 }
@@ -204,12 +204,12 @@
 
 @-webkit-keyframes slideFromUp {
   0% {
-    top : -290%;
+    bottom : 25%;
     opacity: 1;
     visibility: visible;
   }
   100% {
-    top: 0;
+    bottom: 0;
     visibility: hidden;
   }
 }
@@ -218,7 +218,7 @@
 .ui .chat .smilies {
   position: absolute;
   right: 0px;
-  top : -290%;
+  bottom : 25%;
   max-width: 100%;
 }
 

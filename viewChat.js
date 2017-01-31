@@ -170,7 +170,7 @@ function loadMessages () {
 		}
 	}
 
-	if (ui.find(".write textarea").val().trim() == "") ui.find(".write .topic").val(subject);
+	if (ui.find(".write textarea").val().trim() == "" || ui.find(".write textarea").val().trim() == "Hi") ui.find(".write .topic").val(subject);
 
 	ui.find(".top .auctions").attr("href", "genie.phtml?type=find_user&auction_username=" + username)
 	ui.find(".top .trades").attr("href", "island/tradingpost.phtml?type=browse&criteria=owner&search_string=" + username)
