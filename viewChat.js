@@ -23,9 +23,17 @@ chrome.storage.onChanged.addListener(function (changes, name) {
 		data = changes[user].newValue;
 		processSideBar();
 		loadMessages();
+		showBytesInUse();
 	}
-})
+});
 
+chrome.storage.local.get("messages", function (result) {
+	if (result.messages && result.messages.update) {
+		showUpdates(result.messages.update);
+		delete result.messages.update;
+		chrome.storage.local.set({"messages" : result.messages});
+	}
+});
 
 function initSearch (ui) {
     ui.find("input.search").on("input", filterUsers);
@@ -51,8 +59,8 @@ function processSideBar () {
 
 	ui = init ? chat.fullChatTemplate.clone() : ui;
 
-	var usernames = Object.keys(data.users).sort(function(a, b){
-		return data.users[b].messages[data.users[b].lastMessage].date - data.users[a].messages[data.users[a].lastMessage].date;
+	var usernames = Object.keys(data.users).filter(u => data.users[u].lastMessage != null).sort(function(a, b){
+		return data.users[b].messages[data.users[b].lastMessage].date - data.users[a].messages[data.users[a].lastMessage].date || b - a;
 	});
 
 	var users = [];
@@ -86,7 +94,7 @@ function processSideBar () {
 	ui.find(".list-users").append(users);
 
 	if (init) {
-		$("div[align='center']").filter(function(){return $(this).text().indexOf("neochat") != -1}).eq(0).next().after(ui);
+		$("div[align='center']").filter(function(){return $(this).text().indexOf("neochat |") != -1}).eq(0).next().after(ui).prevUntil("b").remove();
 		
 		$('.list-users').niceScroll(conf);
 	    $('body').niceScroll(conf);
@@ -94,10 +102,16 @@ function processSideBar () {
 	    chat.chatTemplate.find(".smilies").append(Object.keys(smiliesToText).map(v => $(`<div class = 'smilie' data-text = '${smiliesToText[v]}'><img src = '${v}'></img></div>`).get(0)))
 
 	    initSearch(ui);
+
+	    ui.before(chat.configurationTemplate.clone());
+
+	    initConfiguration();
+
 	}
 
 	filterUsers();
 
+	showBytesInUse();
 
 }
 
@@ -211,15 +225,28 @@ function addListener (li) {
 
 	    			$.ajax({url : "http://www.neopets.com/process_neomessages.phtml", type : "post", data : {recipient : user, subject : subject, message_type : "notitle", neofriends : "", message_body : message}}).success(function(html){
 	    				if ($(html).find(".errormess").length) {
-	    					$().toastmessage('showErrorToast', $(html).find(".errormess").html().split("<br>")[0].split("</b>")[1]);
+	    					makeToast("error", null, $(html).find(".errormess").html().split("<br>")[0].split("</b>")[1]);
 	    					ui.find(".write textarea").val(message)
 	    				} else {
-	    					$().toastmessage('showSuccessToast', "Message sent");
+	    					makeToast('success', null, "Message sent");
 	    				}
 	    			}).error(function () {
-	    				$().toastmessage('showErrorToast', "Error, try again later");
-	    				ui.find(".write textarea").val(message)
+	    				makeToast('error', null, "Network error, try again later");
+	    				ui.find(".write textarea").val(message);
 	    			})
+	    		})
+
+	    		ui.find(".user-actions .erase").click(function () {
+	    			var username = ui.find("li.active").attr("data-username");
+
+	    			if (confirm("Are you sure you want to remove the data from user " + username + "?")) {
+	    				var d = new Date();
+	    				d.setMinutes(d.getMinutes() + d.getTimezoneOffset());
+	    				data.users[username].lastDelete = d.getTime();
+	    				chrome.runtime.sendMessage({type : "setStorage", user : user, data : data});
+	    			}
+
+	    			return false;
 	    		})
 
 	    		$('.chat textarea').niceScroll(lol);
@@ -234,4 +261,39 @@ function addListener (li) {
 	    	
 	    }
 	});
+}
+
+
+function showBytesInUse () {
+	chrome.storage.local.getBytesInUse(null, function(v) {
+		$(".configuration .storage-used").text("Used " + formatBytes(v, 2) + " / " + formatBytes(chrome.storage.local.QUOTA_BYTES, 2));	
+	})
+}
+
+
+function initConfiguration () {
+	$(".configuration .view-changelog").click(function() {
+		showUpdates(chrome.runtime.getManifest().version);
+	});
+
+	$(".configuration .import-data").click(function() {
+		$(".configuration").find("input").click();
+	})
+
+	$(".configuration").find("input").change(function(e) {
+		if (event.target.files && this.value.match(/\.([^\.]+)$/)[1] == "json") {
+			var reader = new FileReader();
+	        reader.onload = importData;
+	        reader.readAsText(event.target.files[0]);
+		}
+	})
+
+	$(".configuration .export-data").click(function() {
+		
+		chrome.runtime.sendMessage({type : "export"});
+
+	})
+
+
+
 }

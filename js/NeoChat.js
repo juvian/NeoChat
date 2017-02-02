@@ -14,6 +14,9 @@ class NeoChat {
 			return Template.get("chat")
 		}).then(function(html){
 			self.chatTemplate = $(html);
+			return Template.get("configuration")
+		}).then(function(html){
+			self.configurationTemplate = $(html);
 		})
 	}
 

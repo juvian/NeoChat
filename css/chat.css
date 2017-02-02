@@ -243,11 +243,15 @@
   -webkit-animation-name: slideFromDown;
 }
 
-.ui .chat form.search {
-  float: right;
+.ui .chat .top .search-container {
+  display: inline-block;  
 }
 
-.ui .chat .top input.search {
+.ui .chat .top {
+  display: flex;
+}
+
+.ui .chat .top .search {
   background: none white;
   border: 1px solid rgb(0, 176, 255);
   color: black;
@@ -280,11 +284,60 @@
 
 .ui .user-actions {
   vertical-align: 15px;
-  float: right;
   margin-top: 15px;
+  display: inline-block;
+  flex-grow: 1;
+  justify-content: center;
+  display: inline-flex;
 }
 
 .ui .top .user-info {
   display: inline-block;
   max-width: 230px;
+}
+
+.ui .top .user-actions img {
+    width : 30px;
+    height : 30px;
+}
+
+.ui .user-actions i {
+  position: relative;
+  font-size: 30px;
+  color: rgb(0, 176, 255);
+}
+
+.ui .user-actions > a:not(:first-child) {
+  margin-left: 5px;
+}
+
+.configuration { 
+  margin: 0px 30px;
+  text-align: center;
+}
+
+.configuration .storage-used {
+  margin-right: 10px;
+}
+
+.configuration .user-actions {
+  display: inline-block;
+  margin-left: 10px;
+}
+
+.configuration .user-actions a {
+  cursor: pointer;
+}
+
+.configuration .user-actions .fa {
+  font-size: 14px;
+}
+
+.configuration .user-actions a:not(:first-of-type) {
+  margin-left: 5px;
+}
+
+
+.toast-top-right li {
+  margin-top: 5px;
 }

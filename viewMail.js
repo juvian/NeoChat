@@ -24,12 +24,17 @@ function setData (el, message) {
 
 function getDate (txt) {
 	var d = new Date(txt.split("/")[1] + "/" + txt.split("/")[0] + "/" + txt.split("/")[2].replace("am", " am").replace("pm", " pm").trim());
+	d.setSeconds(59);
 	d.setMinutes(d.getMinutes() + 60 * 8); 
-	return d.getTime();
+
+	var now =  new Date();
+	now.setMinutes(now.getMinutes() + now.getTimezoneOffset());
+
+	return Math.min(d.getTime(), now.getTime());
 }
 
 chrome.runtime.sendMessage({type : "getStorage", user : user}, function(response) {
-	console.log(response)
+	
 	var users = response.users;
 
 	var table = $(".sidebar").siblings(".content").find("table").eq(0);
@@ -42,6 +47,8 @@ chrome.runtime.sendMessage({type : "getStorage", user : user}, function(response
 		folder : table.find("tr:eq(2) td:eq(1)").text(),
 		subject : table.find("tr:eq(3) td:eq(1)").text()
 	}
+
+	if (from.lastDelete && message.date <= from.lastDelete) return;
 
 	setData(table.find("tr:eq(4) td:eq(1)"), message);
 
@@ -72,9 +79,7 @@ chrome.runtime.sendMessage({type : "getStorage", user : user}, function(response
 	}
 
 	if (changed) {
-		chrome.runtime.sendMessage({type : "setStorage", data : response, user : user}, function() {
-
-		});
+		chrome.runtime.sendMessage({type : "setStorage", data : response, user : user});
 	}
 
 

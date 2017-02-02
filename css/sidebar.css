@@ -22,18 +22,22 @@
   overflow: hidden;
 }
 
-.ui i {
+.ui .fa-search {
   position: absolute;
   right: 25px;
   top: 27px;
   color: white;
 }
 
+.ui .top .fa-search {
+  color: #d6d9de;
+}
+
 .ui .search {
   position: relative;
 }
 
-.ui .search input.search {
+.ui input.search {
   outline: none;
   border: none;
   background: none;
@@ -76,10 +80,7 @@
 .ui .chat .info .count {
   color: #6d738d;
 }
-.ui .chat i.fa {
-  color: #d6d9de;
-  vertical-align: 25px;
-}
+
 .ui .avatar > img,
 .ui .list-users img {
   border-radius: 50%;

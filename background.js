@@ -1,5 +1,5 @@
 chrome.runtime.onMessage.addListener(processMessage);
-
+chrome.runtime.onInstalled.addListener(processInstall);
 
 var data = {};
 var pending = [];
@@ -7,56 +7,56 @@ var pending = [];
 
 function defaultData(user) {
 	var obj = {}
-	obj[user] = {"users" : {}, "messageId" : 0};
+	obj[user] = {"users" : {}};
 	return obj;
 }
 
 function noop () {}
 
-function processMessage (request, sender, sendResponse) {
-	sendResponse = sendResponse || noop;
+function processMessage (request, sender, sendResponse) {	
 
-	if (request.type == "smilies") {
-		
-	}
-	
 	if (!data[request.user]) {
 		initialize(request, processMessage.bind(this, request, sender, sendResponse));
-		return true; // to allow async response
-	}
+	} else {
 
-	if (request.type.includes("Storage") || request.type == "getId") {
-		if (request.type == "getStorage") {
-			sendResponse(data[request.user]);
-		} else if (request.type == "setStorage") {
-			merge(request.data, data[request.user])
-			merge(data[request.user], request.data)
+		if (request.type.includes("Storage")) {
+			if (request.type == "getStorage") {
+				sendResponse(data[request.user]);
+				return false;
+			} else if (request.type == "setStorage") {
+				mergeData(data[request.user], request.data)
 
-			pending.push({callback : sendResponse, user : request.user});
+				pending.push({user : request.user});
 
-			if (pending.length == 1) commit();
-
-			return true; // to allow async response
-
-		} else if (request.type == "getId") {
-			sendResponse(data[request.user].messageId++)
-			
+				if (pending.length == 1) commit();
+				
+			}
+		} else if (request.type == "reset") {
+			if (request.recipient) {
+				delete data[request.user].users[request.recipient];
+			} else {
+				delete data[request.user];
+			}
 			pending.push({callback : noop, user : request.user});
+			commit();
+		} else if (request.type == "export") {
+			var obj = {
+				data : data,
+				from : "neochat",
+				version : chrome.runtime.getManifest().version,
+				date : gmtDate().getTime()
+			}
 
-			if (pending.length == 1) commit ();
+			var json = JSON.stringify(obj);
 
-			return true; // to allow async response
+			var blob = new Blob([json], {type: "application/json"});
+			var url  = URL.createObjectURL(blob);
+
+			chrome.downloads.download({url : url, filename : "neochat_export_"+obj.date+".json", saveAs : true});
 		}
-	} else if (request.type == "reset") {
-		if (request.recipient) {
-			delete data[request.user].users[request.recipient];
-		} else {
-			delete data[request.user];
-		}
-		pending.push({callback : noop, user : request.user});
-		commit();
-		return true; // to allow async response
 	}
+
+	return true;
 
   }
 
@@ -67,18 +67,43 @@ function initialize (request, callback) {
 	})
 } 
 
-function merge (obj1, obj2) {
-	for (var attr in obj1) {
-		if (obj2.hasOwnProperty(attr) == false) {
-			obj2[attr] = obj1[attr];
-		} else {
-			if (obj1[attr] instanceof Object) {
-				merge(obj1[attr], obj2[attr]);
-			} else {
-				obj2[attr] = obj1[attr];
-			}
+function mergeData (obj1, obj2) {
+	var users = Object.keys(obj1.users).concat(Object.keys(obj2.users));
+
+	merge(obj1.users, obj2.users);
+
+	users.forEach(function(user) {
+
+		if (obj1.users[user].lastDelete || obj2.users[user].lastDelete) {
+			obj1.users[user].lastDelete = Math.max.apply(null, [obj1.users[user].lastDelete, obj2.users[user].lastDelete].map(v => {if (v == null || v == -Infinity || !v) {return 0}; return v;}));
+
+			Object.keys(obj1.users[user].messages).forEach(function (key) {
+				if (obj1.users[user].messages[key].date <= obj1.users[user].lastDelete) delete obj1.users[user].messages[key];
+			})
 		}
-	}
+
+		updateLastMessage(obj1.users[user]);
+
+	});
+}
+
+function merge (obj1, obj2) {
+
+	if (obj1 == null && obj2 instanceof Object) obj1 = {};
+	if (obj2 == null && obj1 instanceof Object) obj2 = {};
+
+	var attrs = Object.keys(obj1).concat(Object.keys(obj2));
+	
+	for (var i = 0 ; i < attrs.length; i++) {
+
+		if (attrs[i] == "lastDelete") continue;
+		
+		if (obj1[attrs[i]] instanceof Object) {
+			merge(obj1[attrs[i]], obj2[attrs[i]]);
+		} else {
+			obj1[attrs[i]] = obj2[attrs[i]] || obj1[attrs[i]];
+		}
+	}	
 }
 
 function commit () {
@@ -87,7 +112,6 @@ function commit () {
 	temp[obj.user] = data[obj.user];
 
 	chrome.storage.local.set(temp, function(){
-		obj.callback(data[obj.user]);
 		if (pending.length) commit();
 	});
 }
@@ -118,8 +142,8 @@ chrome.webRequest.onBeforeRedirect.addListener(
 			chrome.cookies.get({url : "http://www.neopets.com", name : "neoremember"}, function (result) {
 				var user = result.value;
 
-				var d = new Date(Math.floor(details.timeStamp));
-				d.setMinutes(d.getMinutes() + new Date().getTimezoneOffset())
+				var d = new Date(Math.floor(cache.timeStamp));
+				d.setMinutes(d.getMinutes() +d.getTimezoneOffset())
 
 				var message = {
 					from : user,
@@ -134,20 +158,18 @@ chrome.webRequest.onBeforeRedirect.addListener(
 
 				if (cache.requestBody.formData.reply_message_id) message.reply_message_id = cache.requestBody.formData.reply_message_id[0]; 
 
-				processMessage({type: "getId", user : user}, null, function (id) {
-					var fromId = cache.requestBody.formData.recipient[0];
-					var from = data[user].users[fromId] || (data[user].users[fromId] = {messages : {}, lastMessage : null})
-					
-					if (from.lastMessage == null || from.messages[from.lastMessage].date < message.date) {
-						from.lastMessage = id;
-					}
+				var id = d.getTime();
 
-					from.messages[id] = message;
+				var fromId = cache.requestBody.formData.recipient[0];
+				var from = data[user].users[fromId] || (data[user].users[fromId] = {messages : {}, lastMessage : null})
+				
+				if (from.lastMessage == null || from.messages[from.lastMessage].date < message.date) {
+					from.lastMessage = id;
+				}
 
-					processMessage({type : "setStorage", user : user, data : data[user]}, null, function () {
-						
-					})
-				})
+				from.messages[id] = message;
+
+				processMessage({type : "setStorage", user : user, data : data[user]}, null, noop);
 
 
 			})
@@ -157,3 +179,70 @@ chrome.webRequest.onBeforeRedirect.addListener(
 	},
 	{urls: ["http://www.neopets.com/process_neomessages.phtml"]}
 );
+
+
+
+function isLowerOrEqual (v1, v2) {
+	var versions1 = v1.split(".");
+	var versions2 = v2.split(".");
+
+	for (var i = 0 ; i < Math.max(versions1.length, versions2.length); i++) {
+		if (Number (versions1[i]) > Number (versions2[i])) return false;
+	}
+
+	return versions2.length >= versions1.length;
+
+}
+
+function updateLastMessage(user) {
+	user.lastMessage = Object.keys(user.messages).sort(function(a, b) {
+		return user.messages[b].date - user.messages[a].date;
+	}).concat([null])[0]
+}
+
+function processInstall (details) {
+    if(details.reason == "install") {
+       
+    }else if(details.reason == "update") {
+        if (isLowerOrEqual(details.previousVersion, "1.0.2")) { // delete deprecated messageId and change old sent messages ids to new format
+        	chrome.storage.local.get(null, function (data) {
+        		for (let usr in data) {
+        			if(data[usr] instanceof Object && data[usr].hasOwnProperty("users")) {
+        				processMessage({type : "getStorage", user : usr}, null, function (userData) {
+        					if(userData.messageId) delete userData.messageId;
+        					
+        					for (var u in userData.users) {
+        						var keys = Object.keys(userData.users[u].messages).filter(m => Number(m) < 100000);
+        						
+        						for (var i = 0; i < keys.length; i++) {
+        							var msg = userData.users[u].messages[keys[i]];
+        							userData.users[u].messages[msg.date] = msg;
+        							delete userData.users[u].messages[keys[i]];
+        						}
+
+        						Object.keys(userData.users[u].messages).filter(m => userData.users[u].messages[m].hasOwnProperty("date") == false).forEach(msg => delete userData.users[u].messages[msg]);
+
+        						updateLastMessage(userData.users[u]);
+
+        					}
+        					processMessage({type : "setStorage", user : usr, data : userData}, null, noop);
+        				});
+        			}
+        		}
+        	});
+        }
+    }
+
+    if(details.reason == "update") {
+    	chrome.storage.local.get({"messages" : {}}, function (result) {
+    		result.messages.update = chrome.runtime.getManifest().version;
+    		chrome.storage.local.set({"messages" : result.messages});
+    	})
+    }
+}
+
+function gmtDate () {
+	var d = new Date();
+	d.setMinutes(d.getMinutes() + d.getTimezoneOffset());
+	return d;
+}
