@@ -233,12 +233,10 @@ function processInstall (details) {
         }
     }
 
-    if(details.reason == "update") {
-    	chrome.storage.local.get({"messages" : {}}, function (result) {
-    		result.messages.update = chrome.runtime.getManifest().version;
-    		chrome.storage.local.set({"messages" : result.messages});
-    	})
-    }
+	chrome.storage.local.get({"messages" : {}}, function (result) {
+		result.messages.update = chrome.runtime.getManifest().version;
+		chrome.storage.local.set({"messages" : result.messages});
+	})
 }
 
 function gmtDate () {

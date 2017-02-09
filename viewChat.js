@@ -5,6 +5,8 @@ var data;
 var ui;
 var time = new timeago();
 
+var fakeUser = {topic : "Hi"};
+
 const lol = {
     cursorcolor: '#cdd2d6',
     cursorwidth: '4px',
@@ -42,7 +44,7 @@ function initSearch (ui) {
 function filterUsers () {
 	var filter = ui.find("input.search").val().toLowerCase();
 
-	ui.find(".list-users li").each(function(){
+	ui.find(".list-users li").not(".fake-user").each(function(){
 		var user = data.users[$(this).attr("data-username")];
 
 		if ((user.name || "").toLowerCase().includes(filter) || $(this).attr("data-username").toLowerCase().includes(filter)) {
@@ -107,6 +109,8 @@ function processSideBar () {
 
 	    initConfiguration();
 
+	    initNewMail();
+
 	}
 
 	filterUsers();
@@ -152,7 +156,7 @@ function filterMessages (ui) {
 function loadMessages () {
 	var li = ui.find("li.active");
 
-	if (li.length == 0) return;
+	if (li.length == 0 || li.hasClass("fake-user")) return;
 
 	var username = li.attr("data-username");
 	var user = data.users[username];
@@ -162,6 +166,10 @@ function loadMessages () {
 	});
 
 	var chat = ui.find(".chat")
+
+	chat.find(".top").show();
+	chat.find(".write .fake").hide();
+	chat.find(".write textarea").removeClass("show-less");
 
 	chat.find(".avatar img").attr("src", (user.image || " "));
 	chat.find(".info .name").text((user.name || username));
@@ -195,74 +203,77 @@ function addListener (li) {
 	    if ($(this).hasClass('active')) {
 	        return false;
 	    } else {
-	    	$('.list-users li.active').removeClass('active');
-	    	$(this).addClass('active')
-
-	    	var ui = $(this).parents(".ui");
-	    	
-	    	if (ui.find(".chat").length == 0) { 
-	    		ui.append(chat.chatTemplate.clone());
-	    		
-	    		ui.find(".smilie").click(function () {
-	    			ui.find("textarea").val(ui.find("textarea").val() + $(this).attr("data-text") + " ");
-	    			ui.find(".smilies").addClass("hide")
-	    		})
-
-	    		ui.find(".smiley").click(function () {
-	    			ui.find(".smilies").toggleClass("hide")
-	    		})
-
-	    		ui.find(".top input.search").on("input", function () {
-	    			filterMessages(ui);
-	    		});
-
-	    		ui.find(".send").click(function () {
-	    			var user = ui.find("li.active").attr("data-username");
-	    			var subject = ui.find(".topic").val();
-	    			var message = ui.find(".write textarea").val();
-
-	    			ui.find(".write textarea").val("")
-
-	    			$.ajax({url : "http://www.neopets.com/process_neomessages.phtml", type : "post", data : {recipient : user, subject : subject, message_type : "notitle", neofriends : "", message_body : message}}).success(function(html){
-	    				if ($(html).find(".errormess").length) {
-	    					makeToast("error", null, $(html).find(".errormess").html().split("<br>")[0].split("</b>")[1]);
-	    					ui.find(".write textarea").val(message)
-	    				} else {
-	    					makeToast('success', null, "Message sent");
-	    				}
-	    			}).error(function () {
-	    				makeToast('error', null, "Network error, try again later");
-	    				ui.find(".write textarea").val(message);
-	    			})
-	    		})
-
-	    		ui.find(".user-actions .erase").click(function () {
-	    			var username = ui.find("li.active").attr("data-username");
-
-	    			if (confirm("Are you sure you want to remove the data from user " + username + "?")) {
-	    				var d = new Date();
-	    				d.setMinutes(d.getMinutes() + d.getTimezoneOffset());
-	    				data.users[username].lastDelete = d.getTime();
-	    				chrome.runtime.sendMessage({type : "setStorage", user : user, data : data});
-	    			}
-
-	    			return false;
-	    		})
-
-	    		$('.chat textarea').niceScroll(lol);
-	    		$('.messages').niceScroll(lol);
-
-	    		$(".ui .top .trades").children("img").attr("src", chrome.extension.getURL("images/trades.png"));
-	    		$(".ui .top .auctions").children("img").attr("src", chrome.extension.getURL("images/auctions.png"));
-
-	    	}
-
+	    	selectUser(li);
 	    	loadMessages();
 	    	
 	    }
 	});
 }
 
+
+function selectUser (li) {
+	$('.list-users li.active').removeClass('active');
+	li.addClass('active')
+	
+	if (ui.find(".chat").length == 0) { 
+		ui.append(chat.chatTemplate.clone());
+		
+		ui.find(".smilie").click(function () {
+			if ($(this).parent())
+			ui.find("textarea").val(ui.find("textarea").val() + $(this).attr("data-text") + " ");
+			ui.find(".smilies").addClass("hide")
+		})
+
+		ui.find(".smiley").click(function () {
+			ui.find(".smilies").toggleClass("hide")
+		})
+
+		ui.find(".top input.search").on("input", function () {
+			filterMessages(ui);
+		});
+
+		ui.find(".send").click(function () {
+			var user = ui.find("li.active").hasClass("fake-user") ? ui.find(".fake-username").val() : ui.find("li.active").attr("data-username");
+
+			var subject = ui.find(".topic").val();
+			var message = ui.find(".write textarea").val();
+
+			ui.find(".write textarea").val("")
+
+			$.ajax({url : "http://www.neopets.com/process_neomessages.phtml", type : "post", data : {recipient : user, subject : subject, message_type : "notitle", neofriends : "", message_body : message}}).success(function(html){
+				if ($(html).find(".errormess").length) {
+					makeToast("error", null, $(html).find(".errormess").html().split("<br>")[0].split("</b>")[1]);
+					ui.find(".write textarea").val(message)
+				} else {
+					makeToast('success', null, "Message sent");
+				}
+			}).error(function () {
+				makeToast('error', null, "Network error, try again later");
+				ui.find(".write textarea").val(message);
+			})
+		})
+
+		ui.find(".user-actions .erase").click(function () {
+			var username = ui.find("li.active").attr("data-username");
+
+			if (confirm("Are you sure you want to remove the data from user " + username + "?")) {
+				var d = new Date();
+				d.setMinutes(d.getMinutes() + d.getTimezoneOffset());
+				data.users[username].lastDelete = d.getTime();
+				chrome.runtime.sendMessage({type : "setStorage", user : user, data : data});
+			}
+
+			return false;
+		})
+
+		$('.chat textarea').niceScroll(lol);
+		$('.messages').niceScroll(lol);
+
+		$(".ui .top .trades").children("img").attr("src", chrome.extension.getURL("images/trades.png"));
+		$(".ui .top .auctions").children("img").attr("src", chrome.extension.getURL("images/auctions.png"));
+
+	}
+}
 
 function showBytesInUse () {
 	chrome.storage.local.getBytesInUse(null, function(v) {
@@ -294,6 +305,25 @@ function initConfiguration () {
 
 	})
 
+}
 
+function initNewMail () {
+	ui.find(".fa-pencil-square-o").click(function () {
+		
+		selectUser($(".fake-user"));
 
+		var chat = ui.find(".chat");
+
+		ui.find(".chat .messages").empty();
+
+		chat.find(".top").hide();
+
+		chat.find(".topic").val(fakeUser.topic);
+
+		chat.find(".fake").show();
+		chat.find(".fake-username").focus();
+
+		chat.find(".write textarea").addClass("show-less");
+
+	})
 }

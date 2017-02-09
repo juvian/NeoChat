@@ -46,7 +46,7 @@
   padding: 10px;
   width: 90%;
   box-sizing: border-box;
-  margin: 15px 10px;
+  margin: 15px 5px 15px 0px;
   color: #fff;
 }
 .ui .left-menu {
@@ -140,6 +140,27 @@
 .ui .list-users li.active {
     background-color: lightslategray;
 }
+
 .ui .list-users li.hide {
   display: none;
+}
+
+.ui .list-users li.fake-user {
+  display: none;
+}
+
+.ui .fa-pencil-square-o {
+  font-size: 20px;
+  color: white;
+  margin-left: 10px;
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+.ui .left-menu input.search {
+  width : 80%;
+}
+
+.ui .left-menu .fa-search{
+  right : 20px;
 }

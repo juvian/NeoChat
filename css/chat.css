@@ -261,7 +261,7 @@
   color : rgb(0, 176, 255);
 }
 
-.ui .chat .topic {
+.ui .chat .write input {
   border: none;
   width: 78%;
   border-radius: 5px;
@@ -269,11 +269,11 @@
   text-align: center;
 }
 
-.ui .chat .topic:focus {
+.ui .chat .write input:focus {
   outline: none;
 }
 
-.ui .chat .topic-placeholder {
+.ui .chat .topic-placeholder, .ui .chat .fake-username-placeholder {
   color: rgb(169, 169, 169);
 }
 
@@ -337,7 +337,28 @@
   margin-left: 5px;
 }
 
-
 .toast-top-right li {
   margin-top: 5px;
+}
+
+.ui .fake-username {
+  display: none;
+}
+
+.ui .write textarea.show-less {
+    height : calc(100% - 35px);
+}
+
+.toast-top-right .hide {
+  display: none;
+}
+
+.toast-top-right .fa-arrow-left {
+  margin-right : 10px;
+  font-size: 16px;
+}
+
+.toast-top-right .fa-arrow-right {
+  margin-left : 10px;
+  font-size: 16px;
 }

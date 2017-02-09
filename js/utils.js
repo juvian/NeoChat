@@ -17,15 +17,40 @@ var toastOptions = {
 }
 
 var versionUpdates = {
-	"1.0.3" : [
-		"Changed a few layouts",
-		"Added a remove messages from user button",
-		"Added display of current storage used",
-		"Changed notifications library",
-		"Added changelog view on extension update",
-		"Fixed bug when exchanging more than 1 message with a user on the same minute",
-		"Added import and export buttons"
-	]
+	"1.0.2" : {
+		data : [
+			"Added trade and auction links.",
+			"Changed subject to reflect last message subject from other user.",
+			"Redesigned a few things"
+		],
+		next : "1.0.3",
+		date : "1/31/2017"
+	},
+	"1.0.3" : {
+		data : [
+			"Changed a few layouts",
+			"Added a remove messages from user button",
+			"Added display of current storage used",
+			"Changed notifications library",
+			"Added changelog view on extension update",
+			"Fixed bug when exchanging more than 1 message with a user on the same minute",
+			"Added import and export buttons"
+		],
+		prev : "1.0.2",
+		next : "1.0.4",
+		date : "2/1/2017"
+	},
+	"1.0.4" : {
+		data : [
+			"Added write mail button to write to new users",
+			"Fixed a notification bug",
+			"Added changelog notification on extension install",
+			"Added navigation for changelogs",
+			"Added date to changelogs"
+		],
+		prev : "1.0.3",
+		date : "2/9/2017"
+	}
 }
 
 function formatBytes (bytes,decimals) {
@@ -39,22 +64,46 @@ function formatBytes (bytes,decimals) {
 
 
 function makeToast (type, title, body, options) {
-	options = options || {};
 
-	Object.assign({}, toastOptions, options);
+	var opt = {}
 
-	toastr[type](body, title || "", options);
+	Object.assign(opt, toastOptions, options || {});
+
+	toastr[type](body, title || "", opt);
 
 }
 
 function showUpdates (version) {
-	var message = $("<div><ul style = 'text-align : left'></ul></div>");
-	
+	var message = $("<div></i><ul style = 'text-align : left'></ul></div>");
+	var title = $("<div><i class='fa fa-arrow-left hide'></i>What's new in "+version+"<i class='fa fa-arrow-right hide'></i><div class = 'date' /></div>");
+
 	if (versionUpdates.hasOwnProperty(version)) {
-		message.find("ul").append(versionUpdates[version].map(v => $("<li>" + v + "</li>")));
+
+		if (versionUpdates[version].hasOwnProperty("prev")) {
+			title.find(".fa-arrow-left").show();
+		}
+
+		if (versionUpdates[version].hasOwnProperty("next")) {
+			title.find(".fa-arrow-right").show();
+		}
+
+		title.find(".date").text(versionUpdates[version].date)
+
+		message.find("ul").append(versionUpdates[version].data.map(v => $("<li>" + v + "</li>")));
 	}
 
-	makeToast("info", "What's new in " + version, message.html(), {timeOut : "45000", extendedTimeOut : "5000", preventDuplicates : true});
+	makeToast("info", title.html(), message.html(), {timeOut : "45000", extendedTimeOut : "5000", preventDuplicates : true, tapToDismiss : false});
+
+	$(".fa-arrow-left").click(function () {
+		toastr.remove()
+		showUpdates(versionUpdates[version].prev);
+	})
+
+	$(".fa-arrow-right").click(function () {
+		toastr.remove()
+		showUpdates(versionUpdates[version].next);
+	})
+
 }
 
 function importData (event) {
