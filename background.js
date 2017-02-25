@@ -53,6 +53,29 @@ function processMessage (request, sender, sendResponse) {
 			var url  = URL.createObjectURL(blob);
 
 			chrome.downloads.download({url : url, filename : "neochat_export_"+obj.date+".json", saveAs : true});
+		} else if (request.type == "addMessage") {
+			var userData = data[request.user].users;
+			var from = userData[request.from] = userData[request.from] || {messages : {}, lastMessage : null};
+
+			if (from.lastDelete && request.message.date <= from.lastDelete) return;
+
+			if (from.messages.hasOwnProperty(request.messageID) == false) {
+				from.messages[request.messageID] = request.message;
+			}
+
+			if (from.lastMessage == null || from.messages[from.lastMessage].date < request.message.date) {
+				from.lastMessage = request.messageID;
+				from.image = request.image;
+				from.name = request.name;
+			}
+
+			if (from.name == null) from.name = request.name;
+			if (from.image == null) from.image = request.image;
+
+			pending.push({user : request.user});
+
+			if (pending.length == 1) commit();
+
 		}
 	}
 
@@ -89,14 +112,19 @@ function mergeData (obj1, obj2) {
 
 function merge (obj1, obj2) {
 
-	if (obj1 == null && obj2 instanceof Object) obj1 = {};
-	if (obj2 == null && obj1 instanceof Object) obj2 = {};
-
 	var attrs = Object.keys(obj1).concat(Object.keys(obj2));
 	
 	for (var i = 0 ; i < attrs.length; i++) {
 
 		if (attrs[i] == "lastDelete") continue;
+
+		if(obj1[attrs[i]] == null) {
+			obj1[attrs[i]] = obj2[attrs[i]];
+			continue;
+		} else if (obj2[attrs[i]] == null) {
+			obj2[attrs[i]] = obj1[attrs[i]];
+			continue;
+		}
 		
 		if (obj1[attrs[i]] instanceof Object) {
 			merge(obj1[attrs[i]], obj2[attrs[i]]);
@@ -160,18 +188,19 @@ chrome.webRequest.onBeforeRedirect.addListener(
 
 				var id = d.getTime();
 
-				var fromId = cache.requestBody.formData.recipient[0];
-				var from = data[user].users[fromId] || (data[user].users[fromId] = {messages : {}, lastMessage : null})
+				var fromId = cache.requestBody.formData.recipient[0].trim();
 				
-				if (from.lastMessage == null || from.messages[from.lastMessage].date < message.date) {
-					from.lastMessage = id;
-				}
+				processMessage({type : "getStorage", user : user}, null, function (userData) {
+					var from = userData.users[fromId] || (userData.users[fromId] = {messages : {}, lastMessage : null})
+					
+					if (from.lastMessage == null || from.messages[from.lastMessage].date < message.date) {
+						from.lastMessage = id;
+					}
 
-				from.messages[id] = message;
+					from.messages[id] = message;
 
-				processMessage({type : "setStorage", user : user, data : data[user]}, null, noop);
-
-
+					processMessage({type : "setStorage", user : user, data : userData}, null, noop);
+					});
 			})
 
 			

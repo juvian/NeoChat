@@ -43,8 +43,9 @@ function initSearch (ui) {
 
 function filterUsers () {
 	var filter = ui.find("input.search").val().toLowerCase();
+	var lis = ui.find(".list-users li").not(".fake-user");
 
-	ui.find(".list-users li").not(".fake-user").each(function(){
+	lis.each(function(){
 		var user = data.users[$(this).attr("data-username")];
 
 		if ((user.name || "").toLowerCase().includes(filter) || $(this).attr("data-username").toLowerCase().includes(filter)) {
@@ -52,7 +53,17 @@ function filterUsers () {
 		} else {
 			$(this).addClass("hide");
 		}
-	})
+	});
+
+	if (lis.filter(":visible").length == 0) {
+		lis.each(function(){
+			var user = data.users[$(this).attr("data-username")];
+
+			if (user.messages != null && Object.keys(user.messages).filter(msg => user.messages[msg].text.toLowerCase().includes(filter) || user.messages[msg].subject.toLowerCase().includes(filter)).length) {
+				$(this).removeClass("hide");
+			}
+		});
+	}
 }
 
 function processSideBar () {
@@ -61,7 +72,7 @@ function processSideBar () {
 
 	ui = init ? chat.fullChatTemplate.clone() : ui;
 
-	var usernames = Object.keys(data.users).filter(u => data.users[u].lastMessage != null).sort(function(a, b){
+	var usernames = Object.keys(data.users).filter(u => data.users[u].lastMessage != null && Object.keys(data.users[u].messages).length > 0).sort(function(a, b){
 		return data.users[b].messages[data.users[b].lastMessage].date - data.users[a].messages[data.users[a].lastMessage].date || b - a;
 	});
 
@@ -128,11 +139,11 @@ chrome.runtime.sendMessage({type : "getStorage", user : user}, function(response
 })
 
 function createMessage (message) {
-	var bubble = chat.messageTemplate.clone();
-	bubble.find(".body").html(message.text)
-
 	var dt = new Date(message.date);
 	dt.setMinutes(dt.getMinutes() - 60 * 8);
+
+	var bubble = chat.messageTemplate.clone().attr("data-date", (dt.getMonth() + 1) + '/' + dt.getDate() + '/' + dt.getFullYear());
+	bubble.find(".body").html(message.text)
 
 	var date = ("0" + dt.getHours()).slice(-2) + ":" + ("0" + dt.getMinutes()).slice(-2);
 
@@ -144,12 +155,29 @@ function createMessage (message) {
 	return bubble;
 }
 
+function addDateSeparators () {
 
-function filterMessages (ui) {
+	var lastDate = null;
+
+	ui.find(".messages .bubble").each(function(){
+		var currDate = $(this).data('date');
+		if (currDate != lastDate) {
+			lastDate = currDate;
+			$(this).before("<div class = 'hr-sect'>"+currDate+"</div>");
+		}
+	})
+
+}
+
+function filterMessages () {
 	var filter = ui.find(".top input.search").val();
 
 	ui.find(".chat .messages .bubble").hide().filter(function(){
 		return $(this).text().toLowerCase().includes(filter);
+	}).show();
+
+	ui.find(".chat .messages .hr-sect").hide().filter(function(){
+		return $(this).parent().find(".bubble[data-date='"+$(this).text()+"']:visible").length;
 	}).show();
 }
 
@@ -179,7 +207,9 @@ function loadMessages () {
 
 	ui.find(".messages").append(messages.map(id => createMessage(user.messages[id])));
 
-	filterMessages(ui);
+	addDateSeparators(messages);
+
+	filterMessages();
 
 	ui.find(".messages").scrollTop(ui.find(".messages").prop("scrollHeight"));
 

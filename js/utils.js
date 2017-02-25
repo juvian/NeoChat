@@ -49,7 +49,17 @@ var versionUpdates = {
 			"Added date to changelogs"
 		],
 		prev : "1.0.3",
+		next : "1.0.5",
 		date : "2/9/2017"
+	},
+	"1.0.5" : {
+		data : [
+			"Now when you search users, if there are no results, it will search on user messages. So you can now search by message in all users!",
+			"Added date separators between messages",
+			"Fixed some bugs / made some improvements to the code"
+		],
+		prev : "1.0.4",
+		date : "2/24/2017"
 	}
 }
 

@@ -33,54 +33,29 @@ function getDate (txt) {
 	return Math.min(d.getTime(), now.getTime());
 }
 
-chrome.runtime.sendMessage({type : "getStorage", user : user}, function(response) {
-	
-	var users = response.users;
 
-	var table = $(".sidebar").siblings(".content").find("table").eq(0);
-	var fromId = table.find("a[href^='/userlookup.phtml?user=']").attr("href").split("?user=")[1];
-	var from = users[fromId] || (users[fromId] = {messages : {}, lastMessage : null})
-	
-	var message = {
-		from : fromId,
-		date : getDate(table.find("tr:eq(1) td:eq(1)").text()),
-		folder : table.find("tr:eq(2) td:eq(1)").text(),
-		subject : table.find("tr:eq(3) td:eq(1)").text()
-	}
+var table = $(".sidebar").siblings(".content").find("table").eq(0);
+var fromId = table.find("a[href^='/userlookup.phtml?user=']").attr("href").split("?user=")[1];
 
-	if (from.lastDelete && message.date <= from.lastDelete) return;
+var message = {
+	from : fromId,
+	date : getDate(table.find("tr:eq(1) td:eq(1)").text()),
+	folder : table.find("tr:eq(2) td:eq(1)").text(),
+	subject : table.find("tr:eq(3) td:eq(1)").text()
+}
 
-	setData(table.find("tr:eq(4) td:eq(1)"), message);
-
-	var changed = false;
-
-	if (from.messages.hasOwnProperty(messageID) == false) {
-		from.messages[messageID] = message;
-
-		changed = true;
-	}
+setData(table.find("tr:eq(4) td:eq(1)"), message);
 
 
-	if (from.lastMessage == null || from.messages[from.lastMessage].date < message.date) {
-		from.lastMessage = messageID;
-		from.image = table.find("tr:eq(0) img").attr("src");
-
-		changed = true;
-	}
-
-	if (from.name == null) {
-		from.name = table.find("a[href^='/userlookup.phtml?user=']").next().text()
-		changed = true;
-	}
-
-	if (from.image == null) {
-		from.image = table.find("tr:eq(0) img").attr("src");
-		changed = true;
-	}
-
-	if (changed) {
-		chrome.runtime.sendMessage({type : "setStorage", data : response, user : user});
-	}
-
+chrome.runtime.sendMessage({
+	type : "addMessage",
+	user : user,
+	from : fromId,
+	messageID : messageID,
+	image : table.find("tr:eq(0) img").attr("src"),
+	name : table.find("a[href^='/userlookup.phtml?user=']").next().text(),
+	message : message
+}, function(response) {
 
 });
+

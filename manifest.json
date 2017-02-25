@@ -4,7 +4,7 @@
   "short_name": "Neopets Chat",
   "name" : "Neopets mail enchancer",
   "description": "This extension improves neopets inbox and view/reply messages",
-  "version": "1.0.4",
+  "version": "1.0.5",
 	"content_scripts": [
 	    {
 	      "matches": ["http://www.neopets.com/neomessages.phtml?type=read_message&folder=Inbox&id=*"],
