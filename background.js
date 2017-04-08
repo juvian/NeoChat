@@ -3,6 +3,31 @@ chrome.runtime.onInstalled.addListener(processInstall);
 
 var data = {};
 var pending = [];
+var userPending = null;
+
+function changeNeoChatUser (user, tab) {
+	chrome.tabs.sendMessage(tab.id, {type : "changeUser", user : user})
+}
+
+function goToNeoChat(user) {
+  chrome.tabs.getAllInWindow(undefined, function(tabs) {
+    for (var i = 0, tab; tab = tabs[i]; i++) {
+      if (tab.url && tab.url.indexOf("http://www.neopets.com/neomessages.phtml?folder=neochat") != -1) {
+        chrome.tabs.update(tab.id, {selected: true}, changeNeoChatUser.bind(this, user));
+        return;
+      }
+    }
+    chrome.tabs.create({url: "http://www.neopets.com/neomessages.phtml?folder=neochat"});
+    userPending = user;
+  });
+}
+
+chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+    if (tab.url == "http://www.neopets.com/neomessages.phtml?folder=neochat" && changeInfo.status == 'complete' && userPending) {
+        chrome.tabs.update(tab.id, {selected: true}, changeNeoChatUser.bind(this, userPending));
+        userPending = null;
+    }
+});
 
 
 function defaultData(user) {
@@ -13,9 +38,26 @@ function defaultData(user) {
 
 function noop () {}
 
+var contextMenu = chrome.contextMenus.create({
+	targetUrlPatterns : ["http://www.neopets.com/randomfriend.phtml*"],
+	title : "Neochat user",
+	contexts : ["link"],
+	type : "normal",
+	onclick : function(a, b) {
+		var user = a.linkUrl.split("user=")[1];
+		goToNeoChat(user);
+	}
+})
+
+
 function processMessage (request, sender, sendResponse) {	
 
-	if (!data[request.user]) {
+
+	if (request.type == "contextMenu") {
+		chrome.contextMenus.update(contextMenu, {title : "Neochat " + request.user})
+	} else if (request.type == "newTab") {
+		chrome.tabs.create({ url : request.url });
+	} else if (!data[request.user]) {
 		initialize(request, processMessage.bind(this, request, sender, sendResponse));
 	} else {
 
@@ -200,7 +242,7 @@ chrome.webRequest.onBeforeRedirect.addListener(
 					from.messages[id] = message;
 
 					processMessage({type : "setStorage", user : user, data : userData}, null, noop);
-					});
+				});
 			})
 
 			

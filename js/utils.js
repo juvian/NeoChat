@@ -59,7 +59,16 @@ var versionUpdates = {
 			"Fixed some bugs / made some improvements to the code"
 		],
 		prev : "1.0.4",
-		date : "2/24/2017"
+		date : "2/24/2017",
+		next : "1.0.6"
+	},
+	"1.0.6" : {
+		data : [
+			"Now when you right click any user lookup link in neopets, there will be an option to neochat that user, which will open/switch tab to neochat and load user messages",
+			"Now avatar image above chat messages is a link to user lookup",
+			"Fixed a bug causing scroll not to work after heavy use of the extension"
+		],
+		prev : "1.0.5"
 	}
 }
 

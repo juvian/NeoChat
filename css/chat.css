@@ -383,3 +383,7 @@
   line-height: 0px;
   margin: 0px 8px;
 }
+
+.ui .user-info .avatar {
+  cursor: pointer;
+}

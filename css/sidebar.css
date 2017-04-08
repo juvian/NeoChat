@@ -161,6 +161,10 @@
   width : 80%;
 }
 
+.ui .left-menu input.search::placeholder {
+  color : white;
+}
+
 .ui .left-menu .fa-search{
   right : 20px;
 }

@@ -6,6 +6,7 @@ var ui;
 var time = new timeago();
 
 var fakeUser = {topic : "Hi"};
+var pendingUser = null;
 
 const lol = {
     cursorcolor: '#cdd2d6',
@@ -36,6 +37,33 @@ chrome.storage.local.get("messages", function (result) {
 		chrome.storage.local.set({"messages" : result.messages});
 	}
 });
+
+chrome.runtime.onMessage.addListener(
+  function(request, sender, sendResponse) {
+  		if (request && request.type == "changeUser") {
+  			pendingUser = request.user;
+  			if (ui != null) changeUser(); 			
+  		}
+  	}
+ );
+
+function changeUser () {
+	if (pendingUser == null) return;
+
+	var user = $(".list-users li[data-username='"+pendingUser+"']");
+
+	if (user.length) {
+		ui.find(".left-menu input.search").val(pendingUser);
+		filterUsers();
+		selectUser(user);
+		loadMessages();
+	} else {
+		showNewMailMenu();
+		ui.find("input.fake").val(pendingUser);
+	}
+
+	pendingUser = null;
+}
 
 function initSearch (ui) {
     ui.find("input.search").on("input", filterUsers);
@@ -78,7 +106,7 @@ function processSideBar () {
 
 	var users = [];
 
-	time.cancel();
+	timeago.cancel();
 
 	usernames.forEach(function (username) {
 		var u = data.users[username];
@@ -93,7 +121,9 @@ function processSideBar () {
 			var user = chat.userTemplate.clone();
 			
 			user.attr("data-username", username);
+
 			user.find("img").attr("src", (u.image || " "));
+
 			user.find(".chat-user").text((u.name || "") + " (" + username + ")");
 
 			time.render(user.find(".chat-date").attr("datetime", dt.getTime().toString()));
@@ -121,6 +151,8 @@ function processSideBar () {
 	    initConfiguration();
 
 	    initNewMail();
+
+	    changeUser();
 
 	}
 
@@ -200,6 +232,7 @@ function loadMessages () {
 	chat.find(".write textarea").removeClass("show-less");
 
 	chat.find(".avatar img").attr("src", (user.image || " "));
+
 	chat.find(".info .name").text((user.name || username));
 	chat.find(".info .count").text(messages.length + " messages");	
 
@@ -234,8 +267,7 @@ function addListener (li) {
 	        return false;
 	    } else {
 	    	selectUser(li);
-	    	loadMessages();
-	    	
+	    	loadMessages();	    	
 	    }
 	});
 }
@@ -246,7 +278,7 @@ function selectUser (li) {
 	li.addClass('active')
 	
 	if (ui.find(".chat").length == 0) { 
-		ui.append(chat.chatTemplate.clone());
+		initChat();
 		
 		ui.find(".smilie").click(function () {
 			if ($(this).parent())
@@ -337,23 +369,32 @@ function initConfiguration () {
 
 }
 
+function showNewMailMenu () {
+	selectUser($(".fake-user"));
+
+	var chat = ui.find(".chat");
+
+	ui.find(".chat .messages").empty();
+
+	chat.find(".top").hide();
+
+	chat.find(".topic").val(fakeUser.topic);
+
+	chat.find(".fake").show();
+	chat.find(".fake-username").focus();
+
+	chat.find(".write textarea").addClass("show-less");	
+}
+
 function initNewMail () {
-	ui.find(".fa-pencil-square-o").click(function () {
-		
-		selectUser($(".fake-user"));
+	ui.find(".fa-pencil-square-o").click(showNewMailMenu)
+}
 
-		var chat = ui.find(".chat");
+function initChat () {
 
-		ui.find(".chat .messages").empty();
+	ui.append(chat.chatTemplate.clone());
 
-		chat.find(".top").hide();
-
-		chat.find(".topic").val(fakeUser.topic);
-
-		chat.find(".fake").show();
-		chat.find(".fake-username").focus();
-
-		chat.find(".write textarea").addClass("show-less");
-
-	})
+	ui.find(".user-info .avatar").click(function(){
+		chrome.runtime.sendMessage({type : "newTab", url : "http://www.neopets.com/userlookup.phtml?user=" +  ui.find("li.active").attr("data-username")});
+	});
 }
