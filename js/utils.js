@@ -68,7 +68,17 @@ var versionUpdates = {
 			"Now avatar image above chat messages is a link to user lookup",
 			"Fixed a bug causing scroll not to work after heavy use of the extension"
 		],
-		prev : "1.0.5"
+		prev : "1.0.5",
+		next : "1.0.7",
+		date : "4/7/2017"
+	},
+	"1.0.7" : {
+		data : [
+			"Now when someone sends impress.openneo.net link text, it will be recognized as link",
+			"Extended more user links to show neochat user on right click menu"
+		],
+		prev : "1.0.6",
+		date : "7/25/2017"
 	}
 }
 
@@ -107,6 +117,7 @@ function showUpdates (version) {
 		}
 
 		title.find(".date").text(versionUpdates[version].date)
+
 
 		message.find("ul").append(versionUpdates[version].data.map(v => $("<li>" + v + "</li>")));
 	}

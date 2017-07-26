@@ -3,8 +3,10 @@ document.addEventListener("mousedown", function(event){
         return false;
     }
 
-    if (event.target && event.target.tagName == "A" && event.target.href.indexOf("/randomfriend.phtml?user=") != -1) {
-        chrome.runtime.sendMessage({type : "contextMenu", user : event.target.href.split("user=")[1]})
+    var target = event.path.filter(function(el){return el.tagName == "A"}).concat(null)[0];
+
+    if (target && target.tagName == "A" && (target.href.indexOf("/randomfriend.phtml?user=") != -1 || target.href.indexOf("/userlookup.phtml?user=") != -1)) {
+        chrome.runtime.sendMessage({type : "contextMenu", user : target.href.split("user=")[1]})
     }
     
 });

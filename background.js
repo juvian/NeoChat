@@ -39,7 +39,7 @@ function defaultData(user) {
 function noop () {}
 
 var contextMenu = chrome.contextMenus.create({
-	targetUrlPatterns : ["http://www.neopets.com/randomfriend.phtml*"],
+	targetUrlPatterns : ["http://www.neopets.com/randomfriend.phtml*", "http://www.neopets.com/userlookup.phtml*"],
 	title : "Neochat user",
 	contexts : ["link"],
 	type : "normal",
@@ -209,8 +209,9 @@ chrome.webRequest.onBeforeRedirect.addListener(
 		if (details.url == "http://www.neopets.com/process_neomessages.phtml" && details.method == "POST" && details.statusCode == 302 && requestCache.hasOwnProperty(details.requestId)) {
 			var cache = requestCache[details.requestId]
 
-			chrome.cookies.get({url : "http://www.neopets.com", name : "neoremember"}, function (result) {
-				var user = result.value;
+			chrome.cookies.get({url : "http://www.neopets.com", name : "neologin"}, function (result) {
+				var user = decodeURIComponent(result.value).split("+")[0];
+				//console.log(result, user, details)
 
 				var d = new Date(Math.floor(cache.timeStamp));
 				d.setMinutes(d.getMinutes() +d.getTimezoneOffset())

@@ -170,12 +170,18 @@ chrome.runtime.sendMessage({type : "getStorage", user : user}, function(response
 	})
 })
 
+function fixLinks(str) {
+	return str.replace(/(impress\.openneo\.net[^\s]*)/gi, function(a){
+	    return `<a href = 'https://${a}' target='_blank'>${a}</a> ` 
+	})
+}
+
 function createMessage (message) {
 	var dt = new Date(message.date);
 	dt.setMinutes(dt.getMinutes() - 60 * 8);
 
 	var bubble = chat.messageTemplate.clone().attr("data-date", (dt.getMonth() + 1) + '/' + dt.getDate() + '/' + dt.getFullYear());
-	bubble.find(".body").html(message.text)
+	bubble.find(".body").html(fixLinks(message.text))
 
 	var date = ("0" + dt.getHours()).slice(-2) + ":" + ("0" + dt.getMinutes()).slice(-2);
 
