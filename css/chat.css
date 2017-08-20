@@ -130,6 +130,10 @@
     color: white;
 }
 
+.ui .me.bubble .body a {
+   color: rgb(0, 176, 255);
+}
+
 .ui .chat .bubble {
   -webkit-transition-timing-function: cubic-bezier(0.4, -0.04, 1, 1);
 }

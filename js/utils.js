@@ -78,7 +78,16 @@ var versionUpdates = {
 			"Extended more user links to show neochat user on right click menu"
 		],
 		prev : "1.0.6",
+		next : "1.0.8",
 		date : "7/25/2017"
+	},
+	"1.0.8" : {
+		data : [
+			"Fixed time on messages which was 1 hour behind",
+			"Fixed impressneo links to be blue instead of white when sending message"
+		],
+		prev : "1.0.7",
+		date : "8/19/2017"
 	}
 }
 
