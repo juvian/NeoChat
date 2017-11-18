@@ -176,9 +176,11 @@ function fixLinks(str) {
 	})
 }
 
+var offset = moment().tz('America/Los_Angeles').utcOffset()
+
 function createMessage (message) {
 	var dt = new Date(message.date);
-	dt.setMinutes(dt.getMinutes() - 60 * 7);
+	dt.setMinutes(dt.getMinutes() + offset);
 
 	var bubble = chat.messageTemplate.clone().attr("data-date", (dt.getMonth() + 1) + '/' + dt.getDate() + '/' + dt.getFullYear());
 	bubble.find(".body").html(fixLinks(message.text))

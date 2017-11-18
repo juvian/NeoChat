@@ -1,5 +1,6 @@
 var messageID = window.location.toString().split("&id=")[1].split("&")[0]
 var user = $(".user a:eq(0)").text();
+var offset = moment().tz('America/Los_Angeles').utcOffset()
 
 function setData (el, message) {
 	var div = el.clone();
@@ -25,7 +26,7 @@ function setData (el, message) {
 function getDate (txt) {
 	var d = new Date(txt.split("/")[1] + "/" + txt.split("/")[0] + "/" + txt.split("/")[2].replace("am", " am").replace("pm", " pm").trim());
 	d.setSeconds(59);
-	d.setMinutes(d.getMinutes() + 60 * 7); 
+	d.setMinutes(d.getMinutes() - offset); 
 
 	var now =  new Date();
 	now.setMinutes(now.getMinutes() + now.getTimezoneOffset());
@@ -45,6 +46,7 @@ var message = {
 }
 
 setData(table.find("tr:eq(4) td:eq(1)"), message);
+
 
 
 chrome.runtime.sendMessage({

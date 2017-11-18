@@ -4,17 +4,17 @@
   "short_name": "Neopets Chat",
   "name" : "Neopets mail enchancer",
   "description": "This extension improves neopets inbox and view/reply messages",
-  "version": "1.0.8",
+  "version": "1.0.9",
 	"content_scripts": [
 	    {
 	      "matches": ["http://www.neopets.com/neomessages.phtml?type=read_message&folder=Inbox&id=*"],
 	      "css": [],
-	      "js": ["js/jquery.js", "js/smilies.js" , "viewMail.js"]
+	      "js": ["js/jquery.js", "js/smilies.js", "js/moment.min.js", "js/moment-timezone.min.js", "viewMail.js"]
 	    },
 	    {
 	    	"matches" : ["http://www.neopets.com/neomessages.phtml?folder=neochat"],
 	    	"css" : ["css/chat.css", "css/sidebar.css", "css/jquery.toastr.css", "fontAwesome/css/font-awesome.min.css"],
-	    	"js" : ["js/jquery.js", "js/niceScroll.js", "js/timeago.js", "js/jquery.toastr.js", "js/smilies.js", "js/Template.js" , "js/utils.js", "js/NeoChat.js", "viewChat.js"]
+	    	"js" : ["js/jquery.js", "js/niceScroll.js", "js/timeago.js", "js/jquery.toastr.js", "js/smilies.js", "js/Template.js" , "js/utils.js", "js/NeoChat.js", "js/moment.min.js", "js/moment-timezone.min.js", "viewChat.js"]
 	    }, {
 	    	"matches" : ["http://www.neopets.com/neomessages.phtml*"],
 	    	"js" : ["js/jquery.js", "chatLink.js"]

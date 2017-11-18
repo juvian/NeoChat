@@ -87,7 +87,15 @@ var versionUpdates = {
 			"Fixed impressneo links to be blue instead of white when sending message"
 		],
 		prev : "1.0.7",
-		date : "8/19/2017"
+		date : "8/19/2017",
+		next : "1.0.9"
+	},
+	"1.0.9" : {
+		data : [
+			"Messages received from now on will now display correct time (daylight savings fix)"
+		],
+		prev : "1.0.8",
+		date : "11/17/2017"
 	}
 }
 
