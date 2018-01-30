@@ -192,6 +192,8 @@ var requestCache = {}
 
 chrome.webRequest.onBeforeRequest.addListener(
 	function(details) {
+		if (details.url == "http://www.neopets.com/process_neomessages.phtml" && details.method == "POST" && details.requestBody && details.requestBody.raw) console.log(details)
+			
   		if (details.url == "http://www.neopets.com/process_neomessages.phtml" && details.method == "POST" && details.requestBody && details.requestBody.formData && details.requestBody.formData.recipient[0]) {
   			requestCache[details.requestId] = details;
 			setTimeout(function(){

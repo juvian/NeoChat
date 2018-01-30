@@ -310,7 +310,21 @@ function selectUser (li) {
 
 			ui.find(".write textarea").val("")
 
-			$.ajax({url : "http://www.neopets.com/process_neomessages.phtml", type : "post", data : {recipient : user, subject : subject, message_type : "notitle", neofriends : "", message_body : message}}).success(function(html){
+
+			var form = $(`<form name="neomessage" action="process_neomessages.phtml" method="post">
+						<input class="recipient" type="text" name="recipient"/>
+						<input class = "subject" type="text" name="subject"/>
+						<select name="message_type" onchange="update_title()">
+							<option value="notitle" selected>notitle</option>
+						</select>
+						<input type="text" name="neofriends"/>
+						<textarea name="message_body" class="message_body"></textarea>`);
+
+			form.find(".message_body").val(message)
+			form.find(".subject").val(subject)
+			form.find(".recipient").val(user)
+
+			$.post("http://www.neopets.com/process_neomessages.phtml", new URLSearchParams(new FormData(form.get(0))).toString()).success(function(html){
 				if ($(html).find(".errormess").length) {
 					makeToast("error", null, $(html).find(".errormess").html().split("<br>")[0].split("</b>")[1]);
 					ui.find(".write textarea").val(message)
