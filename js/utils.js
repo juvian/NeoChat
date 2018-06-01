@@ -95,7 +95,7 @@ var versionUpdates = {
 			"Messages received from now on will now display correct time (daylight savings fix)"
 		],
 		prev : "1.0.8",
-		next : "1.0.10"
+		next : "1.0.10",
 		date : "11/17/2017"
 	},
 	"1.0.10" : {
@@ -103,7 +103,14 @@ var versionUpdates = {
 			"Fixed a bug that made some messages not get logged when sending with NeoChat instead of normal email"
 		],
 		prev : "1.0.9",
+		next: "1.0.11",
 		date : "1/29/2018"
+	},
+	"1.0.11" : {
+		data : [
+			"Fixed a bug with export/show memory usage/show updates"
+		],
+		prev: "1.0.10"
 	}
 }
 
