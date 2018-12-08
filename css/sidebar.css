@@ -75,7 +75,7 @@
 .ui .chat .info .name {
   font-weight: 600;
   color: #434753;
-  height: 50%;
+  height: auto;
 }
 .ui .chat .info .count {
   color: #6d738d;
