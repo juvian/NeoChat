@@ -210,7 +210,7 @@ function addDateSeparators () {
 }
 
 function filterMessages () {
-	var filter = ui.find(".top input.search").val();
+	var filter = ui.find(".top input.search").val().toLowerCase();
 
 	ui.find(".chat .messages .bubble").hide().filter(function(){
 		return $(this).text().toLowerCase().includes(filter);

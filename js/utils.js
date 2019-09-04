@@ -110,7 +110,12 @@ var versionUpdates = {
 		data : [
 			"Fixed a bug with export/show memory usage/show updates"
 		],
-		prev: "1.0.10"
+		prev: "1.0.10",
+		next: "1.0.13"
+	},
+	"1.0.13": {
+		data: ["Fixed a bug with different case sensitive usernames"],
+		prev: "1.0.11"
 	}
 }
 

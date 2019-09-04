@@ -83,7 +83,7 @@ function processMessage (request, sender, sendResponse) {
 			commit();
 		} else if (request.type == "export") {
 			var obj = {
-				data : data,
+				data : request.data || data,
 				from : "neochat",
 				version : chrome.runtime.getManifest().version,
 				date : gmtDate().getTime()
@@ -113,6 +113,8 @@ function processMessage (request, sender, sendResponse) {
 
 			if (from.name == null) from.name = request.name;
 			if (from.image == null) from.image = request.image;
+
+			from.name = from.name.trim().toLowerCase()
 
 			pending.push({user : request.user});
 
@@ -233,7 +235,7 @@ chrome.webRequest.onBeforeRedirect.addListener(
 
 				var id = d.getTime();
 
-				var fromId = cache.requestBody.formData.recipient[0].trim();
+				var fromId = cache.requestBody.formData.recipient[0].trim().toLowerCase();
 				
 				processMessage({type : "getStorage", user : user}, null, function (userData) {
 					var from = userData.users[fromId] || (userData.users[fromId] = {messages : {}, lastMessage : null})
@@ -277,7 +279,29 @@ function updateLastMessage(user) {
 function processInstall (details) {
     if(details.reason == "install") {
        
-    }else if(details.reason == "update") {
+    }else if(details.reason == "update") {    	
+    	if (isLowerOrEqual(details.previousVersion, "1.0.13")) { // fix rare cases of not lowercase usernames and not trimmed
+    		chrome.storage.local.get(null, data => {
+    			for (let usr in data) {
+    				if(data[usr] instanceof Object && data[usr].hasOwnProperty("users")) {
+    					processMessage({type : "getStorage", user : usr}, null, function (userData) {
+    						for (var u in userData.users) {
+    							if (u != u.trim().toLowerCase()) {
+    								if (userData.users.hasOwnProperty(u.trim().toLowerCase())) {
+    									merge(userData.users[u.trim().toLowerCase()], userData.users[u]);
+    									updateLastMessage(userData.users[u.trim().toLowerCase()]);
+    								} else {
+    									userData.users[u.trim().toLowerCase()] = userData.users[u];
+    								}
+    								delete userData.users[u];
+    							}
+    						}
+    						processMessage({type : "setStorage", user : usr, data : userData}, null, noop);
+    					})	
+    				}
+    			}
+    		})
+    	}
         if (isLowerOrEqual(details.previousVersion, "1.0.2")) { // delete deprecated messageId and change old sent messages ids to new format
         	chrome.storage.local.get(null, function (data) {
         		for (let usr in data) {
