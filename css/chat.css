@@ -63,6 +63,19 @@
   max-width: 80%;
 }
 
+.ui .bubble a {
+  word-break: break-all;
+}
+
+.ui .bubble.draft.me {
+    border-color: red;
+    cursor: pointer;
+}
+
+.ui .bubble.draft .right-arrow:not(.right-arrow-inner) {
+    border-color: transparent red;
+}
+
 .ui .bubble .time {
     float: right;
     margin-left: 10px;
@@ -121,9 +134,14 @@
 
 .ui .chat .messages {
     padding : 20px;
-    overflow-y: scroll;
+    overflow-y: scroll !important;
     max-height: 70%;
     overflow-x: hidden;
+}
+
+.messages::-webkit-scrollbar { 
+  width: 0 !important;
+  display: none !important; 
 }
 
 .ui .bubble .body a {
@@ -339,6 +357,10 @@
 
 .configuration .user-actions a:not(:first-of-type) {
   margin-left: 5px;
+}
+
+.toast {
+  width: calc(50vw - 530px) !important;
 }
 
 .toast-top-right li {

@@ -65,33 +65,71 @@ function changeUser () {
 	pendingUser = null;
 }
 
+function sortAttr(attr) {
+	return (a, b) => parseInt($(b).attr(attr)) - parseInt($(a).attr(attr));
+}
+
 function initSearch (ui) {
     ui.find("input.search").on("input", filterUsers);
 }
 
 function filterUsers () {
 	var filter = ui.find("input.search").val().toLowerCase();
-	var lis = ui.find(".list-users li").not(".fake-user");
 
-	lis.each(function(){
-		var user = data.users[$(this).attr("data-username")];
+	let lis = Array.from(ui.get(0).querySelectorAll('.list-users li:not(.fake-user)'));
+	let visible = false;
 
-		if ((user.name || "").toLowerCase().includes(filter) || $(this).attr("data-username").toLowerCase().includes(filter)) {
-			$(this).removeClass("hide");
-		} else {
-			$(this).addClass("hide");
-		}
-	});
-
-	if (lis.filter(":visible").length == 0) {
-		lis.each(function(){
-			var user = data.users[$(this).attr("data-username")];
-
-			if (user.messages != null && Object.keys(user.messages).filter(msg => user.messages[msg].text.toLowerCase().includes(filter) || user.messages[msg].subject.toLowerCase().includes(filter)).length) {
-				$(this).removeClass("hide");
-			}
-		});
+	for (let li of lis) {
+		li.classList.toggle("hide", true);
 	}
+
+	filtered = lis.filter(li => {
+		let user = data.users[li.getAttribute("data-username")];
+		return (user.name || "").toLowerCase().includes(filter) || li.getAttribute("data-username").toLowerCase().includes(filter);
+	})
+
+	filtered = filtered.sort((a, b) => parseInt(b.getAttribute("data-order")) - parseInt(a.getAttribute("data-order")))
+
+	if (filtered.length == 0) {
+		filtered = lis.filter(li => {
+			let user = data.users[li.getAttribute("data-username")];
+			let messages = Object.values((user.messages || {})).filter(msg => (msg.text + msg.subject).toLowerCase().includes(filter)).sort((a, b) => b.date - a.date);
+			if (messages.length) {
+				li.setAttribute("data-date", messages[0].date)
+			}
+			return messages.length;
+		})
+
+		filtered = filtered.sort((a, b) => parseInt(b.getAttribute("data-date")) - parseInt(a.getAttribute("data-date")))
+	}
+
+	let users = ui.get(0).querySelector('.list-users');
+
+	for (let li of filtered) {
+		users.appendChild(li);
+	}
+
+	for (let li of filtered) {
+		li.classList.toggle("hide", false);
+	}
+
+}
+
+
+let exists = new Set();
+
+function createUser(username, idx, active) {
+	exists.add(username)
+	var u = data.users[username];
+	var dt = new Date(u.messages[u.lastMessage].date);
+	dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
+	return `<li data-order="${-idx}" class="${username == active ? 'active' : ''}" data-username="${username}">
+		<img width="50" height="50" src="${u.image || " "}">
+		<div class="chat-user-info">
+			<div class="chat-user">${(u.name || "") + " (" + username + ")"}</div>
+			<div class="chat-date" datetime="${dt.getTime().toString()}"></div>
+		</div>
+	</li>`
 }
 
 function processSideBar () {
@@ -108,35 +146,22 @@ function processSideBar () {
 
 	timeago.cancel();
 
-	usernames.forEach(function (username) {
-		var u = data.users[username];
-		var dt = new Date(u.messages[u.lastMessage].date);
-		dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
-		
-		if (ui.find("li[data-username='"+username+"']").length) {
-			var li = $(ui.find("li[data-username='"+username+"']")[0]);
-			time.render(li.find(".chat-date").attr("datetime", dt.getTime().toString()));
-			users.push(li)
-		} else {
-			var user = chat.userTemplate.clone();
-			
-			user.attr("data-username", username);
+	let active = ui.find(".list-users li.active").attr("data-username");
+	let html = usernames.filter(u => !exists.has(u)).map((username, idx) => createUser(username, idx, active)).join("");
 
-			user.find("img").attr("src", (u.image || " "));
+	ui.find(".list-users").get(0).innerHTML += html;
 
-			user.find(".chat-user").text((u.name || "") + " (" + username + ")");
-
-			time.render(user.find(".chat-date").attr("datetime", dt.getTime().toString()));
-
-			addListener(user);
-
-			users.push(user);
-		}
-	});
-
-	ui.find(".list-users").append(users);
+	time.render(ui.get(0).querySelectorAll('.list-users .chat-date'));
 
 	if (init) {
+
+		ui.on("mousedown", ".list-users li", function() {
+			if (!this.classList.contains('active')) {
+		        selectUser($(this));
+		    	loadMessages();	  
+		    }
+		})
+
 		$("div[align='center']").filter(function(){return $(this).text().indexOf("neochat |") != -1}).eq(0).next().after(ui).prevUntil("b").remove();
 		
 		$('.list-users').niceScroll(conf);
@@ -173,6 +198,8 @@ chrome.runtime.sendMessage({type : "getStorage", user : user}, function(response
 function fixLinks(str) {
 	return str.replace(/(impress\.openneo\.net[^\s]*)/gi, function(a){
 	    return `<a href = 'https://${a}' target='_blank'>${a}</a> ` 
+	}).replace(/(items\.jellyneo\.net[^\s]*)/gi, function(a){
+	    return `<a href = 'https://${a}' target='_blank'>${a}</a> ` 
 	})
 }
 
@@ -187,10 +214,19 @@ function createMessage (message) {
 
 	var date = ("0" + dt.getHours()).slice(-2) + ":" + ("0" + dt.getMinutes()).slice(-2);
 
-	bubble.find(".time").text(date).appendTo(bubble.find(".body"))
 	
 	bubble.addClass(message.from == user ? "me" : "you")
 	bubble.find((message.from == user ? ".left-arrow" : ".right-arrow")).remove()
+
+	if (message.draft) {
+		bubble.addClass("draft").attr("title", "Message failed to be sent. Click to copy message");
+		bubble.click(function() {
+			ui.find(".write textarea").val(message.text);
+			ui.find(".write .topic").val(message.subject);
+		})
+	} else {
+		bubble.find(".time").text(date).appendTo(bubble.find(".body"))
+	}
 
 	return bubble;
 }
@@ -248,6 +284,10 @@ function loadMessages () {
 
 	ui.find(".messages").append(messages.map(id => createMessage(user.messages[id])));
 
+	if (user.draft) {
+		ui.find(".messages").append(createMessage(Object.assign(user.draft, {draft: true})));
+	}
+
 	addDateSeparators(messages);
 
 	filterMessages();
@@ -267,17 +307,6 @@ function loadMessages () {
 
 	ui.find(".top .auctions").attr("href", "genie.phtml?type=find_user&auction_username=" + username)
 	ui.find(".top .trades").attr("href", "island/tradingpost.phtml?type=browse&criteria=owner&search_string=" + username)
-}
-
-function addListener (li) {
-	li.mousedown(function(){
-	    if ($(this).hasClass('active')) {
-	        return false;
-	    } else {
-	    	selectUser(li);
-	    	loadMessages();	    	
-	    }
-	});
 }
 
 
@@ -310,7 +339,6 @@ function selectUser (li) {
 
 			ui.find(".write textarea").val("")
 
-
 			var form = $(`<form name="neomessage" action="process_neomessages.phtml" method="post">
 						<input class="recipient" type="text" name="recipient"/>
 						<input class = "subject" type="text" name="subject"/>
@@ -326,7 +354,7 @@ function selectUser (li) {
 
 			$.post("http://www.neopets.com/process_neomessages.phtml", new URLSearchParams(new FormData(form.get(0))).toString()).success(function(html){
 				if ($(html).find(".errormess").length) {
-					makeToast("error", null, $(html).find(".errormess").html().split("<br>")[0].split("</b>")[1]);
+					makeToast("error", null, $(html).find(".errormess .errormess .errormess").html().split("<br>")[0]);
 					ui.find(".write textarea").val(message)
 				} else {
 					makeToast('success', null, "Message sent");

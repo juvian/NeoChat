@@ -208,53 +208,69 @@ chrome.webRequest.onBeforeRequest.addListener(
 	["requestBody"]
 );
 
+chrome.webRequest.onCompleted.addListener(
+	function(details) {
+		if(details.url == "http://www.neopets.com/process_neomessages.phtml" && details.method == "POST" && details.statusCode == 200 && requestCache.hasOwnProperty(details.requestId)) {
+			var cache = requestCache[details.requestId]
+			saveMessage(cache, false);
+		}
+	}, 
+	{urls: ["http://www.neopets.com/process_neomessages.phtml"]}
+)
+
 chrome.webRequest.onBeforeRedirect.addListener(
 	function (details) {
 		if (details.url == "http://www.neopets.com/process_neomessages.phtml" && details.method == "POST" && details.statusCode == 302 && requestCache.hasOwnProperty(details.requestId)) {
 			var cache = requestCache[details.requestId]
-
-			chrome.cookies.get({url : "http://www.neopets.com", name : "neologin"}, function (result) {
-				var user = decodeURIComponent(result.value).split("+")[0];
-				//console.log(result, user, details)
-
-				var d = new Date(Math.floor(cache.timeStamp));
-				d.setMinutes(d.getMinutes() +d.getTimezoneOffset())
-
-				var message = {
-					from : user,
-					date : d.getTime(),
-					subject : cache.requestBody.formData.subject[0],
-					text : cache.requestBody.formData.message_body[0]
-				}
-
-				for (var text in textToSmilies) {
-					message.text = message.text.split(text).join(`<img border="0" src="${textToSmilies[text]}">`);
-				}
-
-				if (cache.requestBody.formData.reply_message_id) message.reply_message_id = cache.requestBody.formData.reply_message_id[0]; 
-
-				var id = d.getTime();
-
-				var fromId = cache.requestBody.formData.recipient[0].trim().toLowerCase();
-				
-				processMessage({type : "getStorage", user : user}, null, function (userData) {
-					var from = userData.users[fromId] || (userData.users[fromId] = {messages : {}, lastMessage : null})
-					
-					if (from.lastMessage == null || from.messages[from.lastMessage].date < message.date) {
-						from.lastMessage = id;
-					}
-
-					from.messages[id] = message;
-
-					processMessage({type : "setStorage", user : user, data : userData}, null, noop);
-				});
-			})
-
-			
+			saveMessage(cache, true);
 		}
 	},
 	{urls: ["http://www.neopets.com/process_neomessages.phtml"]}
 );
+
+function saveMessage(cache, success) {
+	chrome.cookies.get({url : "http://www.neopets.com", name : "neologin"}, function (result) {
+		var user = decodeURIComponent(result.value).split("+")[0];
+
+		var d = new Date(Math.floor(cache.timeStamp));
+		d.setMinutes(d.getMinutes() +d.getTimezoneOffset())
+
+		var message = {
+			from : user,
+			date : d.getTime(),
+			subject : cache.requestBody.formData.subject[0],
+			text : cache.requestBody.formData.message_body[0]
+		}
+
+		for (var text in textToSmilies) {
+			message.text = message.text.split(text).join(`<img border="0" src="${textToSmilies[text]}">`);
+		}
+
+		if (cache.requestBody.formData.reply_message_id) message.reply_message_id = cache.requestBody.formData.reply_message_id[0]; 
+
+		var id = d.getTime();
+
+		var fromId = cache.requestBody.formData.recipient[0].trim().toLowerCase();
+		
+		processMessage({type : "getStorage", user : user}, null, function (userData) {
+			var from = userData.users[fromId] || (userData.users[fromId] = {messages : {}, lastMessage : null})
+			
+			if (success) {
+				if (from.lastMessage == null || from.messages[from.lastMessage].date < message.date) {
+					from.lastMessage = id;
+				}
+
+				from.messages[id] = message;
+				delete from.draft
+			} else {
+				from.draft = message;
+			}
+
+			processMessage({type : "setStorage", user : user, data : userData}, null, noop);
+		});
+	})
+
+}
 
 
 
