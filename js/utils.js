@@ -121,6 +121,17 @@ var versionUpdates = [
       "When a message fails to deliver, a draft will be saved. When looking at the neochat of the user, that draft will appear as the latest message. Click on it to copy text and then try to send it again",
       "Performance improvements"
     ]
+  }, 
+  {
+    "version": "1.2.0",
+    "date": "4/25/2020",
+    "data": [
+      "Added templates! Create/edit/remove with the view templates button and then use them in your chats",
+      "Fixed some cases of neochat to user not working",
+      "Slight layout changes",
+      "Better performance in search",
+      "Fixed timer/user avatar not updating/reordering upon reading a new message with tab open"
+    ]
   }
 ]
 

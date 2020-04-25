@@ -44,15 +44,13 @@ var contextMenu = chrome.contextMenus.create({
 	contexts : ["link"],
 	type : "normal",
 	onclick : function(a, b) {
-		var user = a.linkUrl.split("user=")[1];
+		var user = a.linkUrl.split(".phtml?")[1].split("=")[1].split("&")[0];
 		goToNeoChat(user);
 	}
 })
 
 
 function processMessage (request, sender, sendResponse) {	
-
-
 	if (request.type == "contextMenu") {
 		chrome.contextMenus.update(contextMenu, {title : "Neochat " + request.user})
 	} else if (request.type == "newTab") {
@@ -60,18 +58,25 @@ function processMessage (request, sender, sendResponse) {
 	} else if (!data[request.user]) {
 		initialize(request, processMessage.bind(this, request, sender, sendResponse));
 	} else {
-
-		if (request.type.includes("Storage")) {
+		if (request.type == 'removeTemplate') {
+			delete data[request.user].templates[request.name];
+			pending.push({user : request.user});
+		} else if (request.type == 'updateTemplate') {
+			data[request.user].templates = data[request.user].templates || {};
+			data[request.user].templates[request.name] = data[request.user].templates[request.name] || {}
+			data[request.user].templates[request.name].message = request.message;
+			pending.push({user : request.user});
+		} else if (request.type == "removeMessages") {
+			data[request.user].users[request.username].lastDelete = request.time;
+			checkLastDelete(Object.keys(data[request.user].users), data[request.user], null);
+			pending.push({user : request.user});
+		} else if (request.type.includes("Storage")) {
 			if (request.type == "getStorage") {
 				sendResponse(data[request.user]);
 				return false;
 			} else if (request.type == "setStorage") {
 				mergeData(data[request.user], request.data)
-
 				pending.push({user : request.user});
-
-				if (pending.length == 1) commit();
-				
 			}
 		} else if (request.type == "reset") {
 			if (request.recipient) {
@@ -79,8 +84,7 @@ function processMessage (request, sender, sendResponse) {
 			} else {
 				delete data[request.user];
 			}
-			pending.push({callback : noop, user : request.user});
-			commit();
+			pending.push({user : request.user});
 		} else if (request.type == "export") {
 			var obj = {
 				data : request.data || data,
@@ -117,10 +121,8 @@ function processMessage (request, sender, sendResponse) {
 			from.name = from.name.trim().toLowerCase()
 
 			pending.push({user : request.user});
-
-			if (pending.length == 1) commit();
-
 		}
+		commit();
 	}
 
 	return true;
@@ -138,11 +140,20 @@ function mergeData (obj1, obj2) {
 	var users = Object.keys(obj1.users).concat(Object.keys(obj2.users));
 
 	merge(obj1.users, obj2.users);
+	
+	obj1.templates = obj1.templates || {};
+	obj2.templates = obj2.templates || {};
 
+	merge(obj1.templates, obj2.templates);
+
+	checkLastDelete(users, obj1, obj2);
+}
+
+function checkLastDelete(users, obj1, obj2) {
 	users.forEach(function(user) {
 
-		if (obj1.users[user].lastDelete || obj2.users[user].lastDelete) {
-			obj1.users[user].lastDelete = Math.max.apply(null, [obj1.users[user].lastDelete, obj2.users[user].lastDelete].map(v => {if (v == null || v == -Infinity || !v) {return 0}; return v;}));
+		if (obj1.users[user].lastDelete || (obj2 && obj2.users[user].lastDelete)) {
+			obj1.users[user].lastDelete = Math.max.apply(null, [obj1.users[user].lastDelete, obj2 ? obj2.users[user].lastDelete : null].map(v => {if (v == null || v == -Infinity || !v) {return 0}; return v;}));
 
 			Object.keys(obj1.users[user].messages).forEach(function (key) {
 				if (obj1.users[user].messages[key].date <= obj1.users[user].lastDelete) delete obj1.users[user].messages[key];
@@ -178,17 +189,23 @@ function merge (obj1, obj2) {
 	}	
 }
 
-function commit () {
+function _commit () {
 	var obj = pending.shift();
 	var temp = {}
 	temp[obj.user] = data[obj.user];
 
 	chrome.storage.local.set(temp, function(){
-		if (pending.length) commit();
+		if (pending.length) _commit();
+		else _commit.working = false;
 	});
 }
 
-
+function commit () {
+	if (_commit.working != true && pending.length) {
+		_commit.working = true;
+		_commit();
+	}
+}
 
 var requestCache = {}
 

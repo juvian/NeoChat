@@ -26,6 +26,7 @@ chrome.storage.onChanged.addListener(function (changes, name) {
 		data = changes[user].newValue;
 		processSideBar();
 		loadMessages();
+		loadTemplates();
 		showBytesInUse();
 	}
 });
@@ -50,12 +51,10 @@ chrome.runtime.onMessage.addListener(
 function changeUser () {
 	if (pendingUser == null) return;
 
-	var user = $(".list-users li[data-username='"+pendingUser+"']");
-
-	if (user.length) {
+	if (lis.hasOwnProperty(pendingUser)) {
 		ui.find(".left-menu input.search").val(pendingUser);
 		filterUsers();
-		selectUser(user);
+		selectUser($(lis[pendingUser]));
 		loadMessages();
 	} else {
 		showNewMailMenu();
@@ -74,56 +73,44 @@ function initSearch (ui) {
 }
 
 function filterUsers () {
+	let ul = ui.get(0).querySelector('.list-users');
+	let fake = ul.querySelector('.fake-user');
+	let active = ui.find(".list-users li.active").attr("data-username");
+	ul.innerHTML = '';	
+
 	var filter = ui.find("input.search").val().toLowerCase();
 
-	let lis = Array.from(ui.get(0).querySelectorAll('.list-users li:not(.fake-user)'));
-	let visible = false;
-
-	for (let li of lis) {
-		li.classList.toggle("hide", true);
-	}
-
-	filtered = lis.filter(li => {
-		let user = data.users[li.getAttribute("data-username")];
-		return (user.name || "").toLowerCase().includes(filter) || li.getAttribute("data-username").toLowerCase().includes(filter);
+	let filtered = usernames.filter(u => {
+		let user = data.users[u];
+		return (user.name || "").toLowerCase().includes(filter) || u.toLowerCase().includes(filter)
 	})
 
-	filtered = filtered.sort((a, b) => parseInt(b.getAttribute("data-order")) - parseInt(a.getAttribute("data-order")))
-
 	if (filtered.length == 0) {
-		filtered = lis.filter(li => {
-			let user = data.users[li.getAttribute("data-username")];
+		dates = usernames.reduce((cur, u) => {
+			let user = data.users[u];
 			let messages = Object.values((user.messages || {})).filter(msg => (msg.text + msg.subject).toLowerCase().includes(filter)).sort((a, b) => b.date - a.date);
-			if (messages.length) {
-				li.setAttribute("data-date", messages[0].date)
-			}
-			return messages.length;
-		})
+			if (messages.length) cur[u] = messages[0].date
+			return cur;
+		}, {})
 
-		filtered = filtered.sort((a, b) => parseInt(b.getAttribute("data-date")) - parseInt(a.getAttribute("data-date")))
+		filtered = Object.keys(dates).sort((a, b) => dates[b] - dates[a]);
 	}
 
-	let users = ui.get(0).querySelector('.list-users');
-
-	for (let li of filtered) {
-		users.appendChild(li);
-	}
-
-	for (let li of filtered) {
-		li.classList.toggle("hide", false);
-	}
-
+	let frag = document.createDocumentFragment();
+	frag.appendChild(fake);
+	filtered.forEach(u => frag.appendChild(lis[u]))
+	ul.appendChild(frag);
 }
 
 
-let exists = new Set();
+let usernames = [];
+let lis = {};
 
-function createUser(username, idx, active) {
-	exists.add(username)
+function createUser(username, active) {
 	var u = data.users[username];
 	var dt = new Date(u.messages[u.lastMessage].date);
 	dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
-	return `<li data-order="${-idx}" class="${username == active ? 'active' : ''}" data-username="${username}">
+	return `<li class="${username == active ? 'active' : ''}" data-username="${username}">
 		<img width="50" height="50" src="${u.image || " "}">
 		<div class="chat-user-info">
 			<div class="chat-user">${(u.name || "") + " (" + username + ")"}</div>
@@ -138,20 +125,19 @@ function processSideBar () {
 
 	ui = init ? chat.fullChatTemplate.clone() : ui;
 
-	var usernames = Object.keys(data.users).filter(u => data.users[u].lastMessage != null && Object.keys(data.users[u].messages).length > 0).sort(function(a, b){
+	usernames = Object.keys(data.users).filter(u => data.users[u].lastMessage != null && Object.keys(data.users[u].messages).length > 0).sort(function(a, b){
 		return data.users[b].messages[data.users[b].lastMessage].date - data.users[a].messages[data.users[a].lastMessage].date || b - a;
 	});
 
-	var users = [];
+	let body = new DOMParser().parseFromString(usernames.map(u => createUser(u)).join(""), "text/html").body
 
-	timeago.cancel();
+	for (let li of body.querySelectorAll('li')) {
+		lis[li.getAttribute("data-username")] = li;
+	}
 
-	let active = ui.find(".list-users li.active").attr("data-username");
-	let html = usernames.filter(u => !exists.has(u)).map((username, idx) => createUser(username, idx, active)).join("");
+	time.render(body.querySelectorAll(".chat-date"));
 
-	ui.find(".list-users").get(0).innerHTML += html;
-
-	time.render(ui.get(0).querySelectorAll('.list-users .chat-date'));
+	filterUsers();
 
 	if (init) {
 
@@ -162,10 +148,29 @@ function processSideBar () {
 		    }
 		})
 
+		ui.on("click", ".bubble .fa-edit", function () {
+			let name = this.closest('.bubble').getAttribute('title');
+			$(".template-name").val(name)
+			$(".write-template textarea").val(data.templates[name].message);
+		})
+
+		ui.on("click", ".bubble .fa-close", function () {
+			let name = this.closest('.bubble').getAttribute('title');
+			chrome.runtime.sendMessage({type : "removeTemplate", user : user, name: name});
+		})
+
+		ui.on("click", ".content div", function () {
+			let name = $(this).text();
+			this.closest(".write").querySelector("textarea").value += data.templates[name].message;
+			this.closest(".templates").classList.add("hide");
+		})
+
+	
 		$("div[align='center']").filter(function(){return $(this).text().indexOf("neochat |") != -1}).eq(0).next().after(ui).prevUntil("b").remove();
 		
 		$('.list-users').niceScroll(conf);
 	    $('body').niceScroll(conf);
+
 	    
 	    chat.chatTemplate.find(".smilies").append(Object.keys(smiliesToText).map(v => $(`<div class = 'smilie' data-text = '${smiliesToText[v]}'><img src = '${v}'></img></div>`).get(0)))
 
@@ -181,15 +186,12 @@ function processSideBar () {
 
 	}
 
-	filterUsers();
-
 	showBytesInUse();
 
 }
 
 chrome.runtime.sendMessage({type : "getStorage", user : user}, function(response) {
 	data = response;
-
 	chat.loadTemplates().then(function(){
 		processSideBar();
 	})
@@ -206,26 +208,33 @@ function fixLinks(str) {
 var offset = moment().tz('America/Los_Angeles').utcOffset()
 
 function createMessage (message) {
-	var dt = new Date(message.date);
-	dt.setMinutes(dt.getMinutes() + offset);
+	var bubble = chat.messageTemplate.clone()
 
-	var bubble = chat.messageTemplate.clone().attr("data-date", (dt.getMonth() + 1) + '/' + dt.getDate() + '/' + dt.getFullYear());
+	if (!message.template) {
+		var dt = new Date(message.date);
+		dt.setMinutes(dt.getMinutes() + offset);
+		bubble.attr("data-date", (dt.getMonth() + 1) + '/' + dt.getDate() + '/' + dt.getFullYear());
+		var date = ("0" + dt.getHours()).slice(-2) + ":" + ("0" + dt.getMinutes()).slice(-2);
+		if (!message.draft) bubble.find(".time").text(date).appendTo(bubble.find(".body"))
+	}
+
+	bubble.attr("title", message.subject);
 	bubble.find(".body").html(fixLinks(message.text))
 
-	var date = ("0" + dt.getHours()).slice(-2) + ":" + ("0" + dt.getMinutes()).slice(-2);
-
-	
 	bubble.addClass(message.from == user ? "me" : "you")
 	bubble.find((message.from == user ? ".left-arrow" : ".right-arrow")).remove()
 
 	if (message.draft) {
 		bubble.addClass("draft").attr("title", "Message failed to be sent. Click to copy message");
 		bubble.click(function() {
-			ui.find(".write textarea").val(message.text);
-			ui.find(".write .topic").val(message.subject);
+			ui.find(".write-message textarea").val(message.text);
+			ui.find(".write-message .topic").val(message.subject);
 		})
-	} else {
-		bubble.find(".time").text(date).appendTo(bubble.find(".body"))
+	}
+
+	if (message.template) {
+		bubble.addClass("template");
+		bubble.find('.body').append("<i class='fa fa-close'></i>").prepend("<i class='fa fa-edit'></i>")
 	}
 
 	return bubble;
@@ -272,8 +281,8 @@ function loadMessages () {
 	var chat = ui.find(".chat")
 
 	chat.find(".top").show();
-	chat.find(".write .fake").hide();
-	chat.find(".write textarea").removeClass("show-less");
+	chat.find(".write-message .fake-row").hide();
+	chat.find(".write-message textarea").removeClass("show-less");
 
 	chat.find(".avatar img").attr("src", (user.image || " "));
 
@@ -303,7 +312,7 @@ function loadMessages () {
 		}
 	}
 
-	if (ui.find(".write textarea").val().trim() == "" || ui.find(".write textarea").val().trim() == "Hi") ui.find(".write .topic").val(subject);
+	if (ui.find(".write-message textarea").val().trim() == "" || ui.find(".write-message textarea").val().trim() == "Hi") ui.find(".write-message .topic").val(subject);
 
 	ui.find(".top .auctions").attr("href", "genie.phtml?type=find_user&auction_username=" + username)
 	ui.find(".top .trades").attr("href", "island/tradingpost.phtml?type=browse&criteria=owner&search_string=" + username)
@@ -311,6 +320,7 @@ function loadMessages () {
 
 
 function selectUser (li) {
+	ui.find(".chat").removeClass("template");
 	$('.list-users li.active').removeClass('active');
 	li.addClass('active')
 	
@@ -318,8 +328,7 @@ function selectUser (li) {
 		initChat();
 		
 		ui.find(".smilie").click(function () {
-			if ($(this).parent())
-			ui.find("textarea").val(ui.find("textarea").val() + $(this).attr("data-text") + " ");
+			$(this).closest(".write").find("textarea").val($(this).closest(".write").find("textarea").val() + $(this).attr("data-text") + " ")
 			ui.find(".smilies").addClass("hide")
 		})
 
@@ -327,17 +336,26 @@ function selectUser (li) {
 			ui.find(".smilies").toggleClass("hide")
 		})
 
+		ui.find(".select-template").click(function() {
+			let div = ui.find(".templates")
+			div.toggleClass("hide")
+			if (div.is(":visible")) {
+				let html = Object.keys(data.templates).map(name => `<div class='template-name'>${name}</div>`).join('');
+				div.find(".content").html(html);
+			}
+		})
+
 		ui.find(".top input.search").on("input", function () {
 			filterMessages(ui);
 		});
 
 		ui.find(".send").click(function () {
-			var user = ui.find("li.active").hasClass("fake-user") ? ui.find(".fake-username").val() : ui.find("li.active").attr("data-username");
+			let username = ui.find("li.active").hasClass("fake-user") ? ui.find(".fake-username").val() : ui.find("li.active").attr("data-username");
 
 			var subject = ui.find(".topic").val();
-			var message = ui.find(".write textarea").val();
+			var message = ui.find(".write-message textarea").val();
 
-			ui.find(".write textarea").val("")
+			ui.find(".write-message textarea").val("")
 
 			var form = $(`<form name="neomessage" action="process_neomessages.phtml" method="post">
 						<input class="recipient" type="text" name="recipient"/>
@@ -350,18 +368,18 @@ function selectUser (li) {
 
 			form.find(".message_body").val(message)
 			form.find(".subject").val(subject)
-			form.find(".recipient").val(user)
+			form.find(".recipient").val(username)
 
 			$.post("http://www.neopets.com/process_neomessages.phtml", new URLSearchParams(new FormData(form.get(0))).toString()).success(function(html){
 				if ($(html).find(".errormess").length) {
 					makeToast("error", null, $(html).find(".errormess .errormess .errormess").html().split("<br>")[0]);
-					ui.find(".write textarea").val(message)
+					ui.find(".write-message textarea").val(message)
 				} else {
 					makeToast('success', null, "Message sent");
 				}
 			}).error(function () {
 				makeToast('error', null, "Network error, try again later");
-				ui.find(".write textarea").val(message);
+				ui.find(".write-message textarea").val(message);
 			})
 		})
 
@@ -371,11 +389,17 @@ function selectUser (li) {
 			if (confirm("Are you sure you want to remove the data from user " + username + "?")) {
 				var d = new Date();
 				d.setMinutes(d.getMinutes() + d.getTimezoneOffset());
-				data.users[username].lastDelete = d.getTime();
-				chrome.runtime.sendMessage({type : "setStorage", user : user, data : data});
+				chrome.runtime.sendMessage({type : "removeMessages", user : user, time: d.getTime(), username: username});
 			}
 
 			return false;
+		})
+
+		ui.find(".actions .fa-save").click(function() {
+			let name = ui.find(".template-name").val().trim();
+			if (name) {
+				chrome.runtime.sendMessage({type : "updateTemplate", user : user, name: name, message: ui.find(".write-template textarea").val()});
+			}
 		})
 
 		$('.chat textarea').niceScroll(lol);
@@ -412,11 +436,24 @@ function initConfiguration () {
 	})
 
 	$(".configuration .export-data").click(function() {
-		
 		chrome.runtime.sendMessage({type : "export"});
-
 	})
 
+	$(".configuration .create-template").click(function(){
+		selectUser($(".fake-user"));
+		ui.find(".chat").addClass("template");
+		ui.find(".top").hide();
+
+		loadTemplates();
+	})
+}
+
+function loadTemplates() {
+	if (ui.find(".chat.template").length == 0) return;
+	ui.find(".chat .messages").empty();
+	let templates = data.templates || {};
+	let bubbles = Object.keys(templates).sort().map(name => createMessage({text: name + " : " + templates[name].message, subject: name, template: true, from: user}));
+	ui.find(".chat .messages").append(bubbles);
 }
 
 function showNewMailMenu () {
@@ -430,10 +467,10 @@ function showNewMailMenu () {
 
 	chat.find(".topic").val(fakeUser.topic);
 
-	chat.find(".fake").show();
+	chat.find(".fake-row").show();
 	chat.find(".fake-username").focus();
 
-	chat.find(".write textarea").addClass("show-less");	
+	chat.find(".write-message textarea").addClass("show-less");	
 }
 
 function initNewMail () {

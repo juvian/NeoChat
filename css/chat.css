@@ -13,6 +13,24 @@
   border-radius: 5px;
 
 }
+
+.chat .write-template {
+  display: none;
+}
+
+.chat.template .write-template {
+  display: block;
+}
+
+.chat.template .write-message {
+  display: none;
+}
+
+.chat i {
+  font-size: 14px;
+}
+
+
 .ui .write textarea {
   font-size: 14px;
   width: 100%;
@@ -36,22 +54,6 @@
     height: 16px; 
 }
 
-.ui .write .write-link.smiley:before {
-  display: inline-block;
-  content: '';
-  background-image: url(chrome-extension://__MSG_@@extension_id__/images/smiley.png);
-  background-repeat: no-repeat;
-  background-position: center;
-}
-
-.ui .write .write-link.send:before {
-  display: inline-block;
-  content: '';
-  background-image: url(chrome-extension://__MSG_@@extension_id__/images/send.png);
-  background-repeat: no-repeat;
-  background-position: center;
-}
-
 .ui .bubble {
   position: relative;
   display: inline-block;
@@ -70,6 +72,18 @@
 .ui .bubble.draft.me {
     border-color: red;
     cursor: pointer;
+}
+
+.ui .bubble .fa {
+    cursor: pointer;
+}
+
+.ui .bubble .fa-edit {
+    margin-right: 5px;
+}
+
+.ui .bubble .fa-close {
+    margin-left: 5px;
 }
 
 .ui .bubble.draft .right-arrow:not(.right-arrow-inner) {
@@ -237,14 +251,18 @@
 }
 
 
-.ui .chat .smilies {
+.ui .chat .smilies, .ui .chat .templates {
   position: absolute;
   right: 0px;
   bottom : 25%;
   max-width: 100%;
 }
 
-.ui .chat .smilies.hide {
+.ui .chat .template-name {
+  cursor: pointer;
+}
+
+.ui .chat .smilies.hide, .ui .chat .templates.hide {
   opacity: 0;
   visibility: hidden;
   -webkit-animation-name: slideFromUp;
@@ -279,13 +297,32 @@
   color: black;
 }
 
+.ui .fake-row {
+  margin-bottom: 5px;
+}
+
+.ui .row {
+    display:flex;
+}
+
+.ui .row input {
+    flex-grow:1;
+}
+
+.ui .row .topic-placeholder, .ui .row .fake-username-placeholder {
+    margin-right: 5px;
+}
+
+.ui .row .actions {
+    margin-left:5px;
+}
+
 .ui .chat .top .search i {
   color : rgb(0, 176, 255);
 }
 
 .ui .chat .write input {
   border: none;
-  width: 78%;
   border-radius: 5px;
   color : rgb(0, 176, 255);
   text-align: center;
@@ -365,10 +402,6 @@
 
 .toast-top-right li {
   margin-top: 5px;
-}
-
-.ui .fake-username {
-  display: none;
 }
 
 .ui .write textarea.show-less {

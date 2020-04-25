@@ -22,21 +22,52 @@
 		</div>
 	</div>
 	<div class="messages"/>   
-	<div class="write">
-  			<span class="fake-username-placeholder fake">Write to :</span>
-  			<input class="fake-username fake"/>
+	<div class="write write-message">
+
+        <div class = "row fake-row">		
+			<span class="fake-username-placeholder fake">Write to :</span>
+			<input class="fake-username fake"/>
+		</div>
+       
         <div class = "hide bubble me smilies">
         	<div class = "arrow right-arrow"/>
     		<div class = "arrow right-arrow right-arrow-inner"/>
         </div>
 
-		<span class="topic-placeholder">Subject :</span>
-		<input class="topic" value="Hi"></input>
-		<div class = "actions">
-			<div  class="write-link smiley"></div>
-	    	<div class="write-link send"></div>
-    	</div>
+        <div class = "hide bubble me templates">
+        	<div class = "arrow right-arrow"/>
+    		<div class = "arrow right-arrow right-arrow-inner"/>
+    		<div class = "content"></div>
+        </div>	
+
+        <div class = "row">
+			<span class="topic-placeholder">Subject :</span>
+			<input class="topic" value="Hi"></input>
+			<div class = "actions">
+				<i class="fa fa-envelope-o write-link select-template"  title="Select template"></i>
+				<i class="fa fa-smile-o write-link smiley"  title="Smilies"></i>
+				<i class="fa fa-send-o write-link send" title="Send Message"></i>
+	    	</div>
+	    </div>
 
 		<textarea placeholder="Write your message"></textarea>
+	</div>
+	<div class="write write-template">
+        <div class = "hide bubble me smilies">
+        	<div class = "arrow right-arrow"/>
+    		<div class = "arrow right-arrow right-arrow-inner"/>
+        </div>	
+
+        <div class = "row">
+	        <span class="topic-placeholder">Name :</span>
+			<input class="template-name" value=""></input>
+			
+			<div class = "actions">
+				<i class="fa fa-smile-o write-link smiley" title="Smilies"></i>
+				<i class="fa fa-save write-link" title="Save Template"></i>
+			</div>	
+		</div>
+
+		<textarea placeholder="Write your template"></textarea>
 	</div>
 </div>
