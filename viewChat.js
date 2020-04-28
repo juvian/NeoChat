@@ -101,7 +101,8 @@ function filterUsers () {
 	filtered.forEach(u => frag.appendChild(lis[u]))
 	ul.appendChild(frag);
 
-	if(lis[active]) lis[active].classList.add("active");
+	if(filtered.includes(active)) lis[active].classList.add("active");
+	else if (lis[active]) lis[active].classList.remove("active");
 }
 
 
