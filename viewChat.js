@@ -100,6 +100,8 @@ function filterUsers () {
 	frag.appendChild(fake);
 	filtered.forEach(u => frag.appendChild(lis[u]))
 	ul.appendChild(frag);
+
+	if(lis[active]) lis[active].classList.add("active");
 }
 
 
