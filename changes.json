@@ -121,5 +121,12 @@
     "data": [
       "Fixed chat not auto refreshing when sending messages"
     ]
+  },
+  {
+    "version": "1.2.2",
+    "date": "5/25/2020",
+    "data": [
+      "Fixed scolling bug on premium users"
+    ]
   }
 ]
