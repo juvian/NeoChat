@@ -21,6 +21,9 @@ const conf = {
     cursorborder: 'none'
 };
 
+
+
+
 chrome.storage.onChanged.addListener(function (changes, name) {
 	if (name == "local" && changes.hasOwnProperty(user)) {
 		data = changes[user].newValue;
@@ -416,7 +419,7 @@ function selectUser (li) {
 
 function showBytesInUse () {
 	chrome.storage.local.getBytesInUse(null, function(v) {
-		$(".configuration .storage-used").text("Used " + formatBytes(v, 2) + " / " + formatBytes(chrome.storage.local.QUOTA_BYTES, 2));	
+		$(".configuration .storage-used").text("Used " + formatBytes(v, 2)); // + " / " + formatBytes(chrome.storage.local.QUOTA_BYTES, 2));	
 	})
 }
 

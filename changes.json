@@ -128,5 +128,12 @@
     "data": [
       "Fixed scolling bug on premium users"
     ]
+  },
+  {
+    "version": "1.2.3",
+    "date": "6/21/2020",
+    "data": [
+      "Added UnlimitedStorage permission to remove restriction of 5mb for mails. Having too many will still make searching slower though ^^"
+    ]
   }
 ]
