@@ -216,6 +216,9 @@ var offset = moment().tz('America/Los_Angeles').utcOffset()
 function createMessage (message) {
 	var bubble = chat.messageTemplate.clone()
 
+	bubble.attr("title", message.subject);
+	bubble.find(".body").html(fixLinks(message.text))
+
 	if (!message.template) {
 		var dt = new Date(message.date);
 		dt.setMinutes(dt.getMinutes() + offset);
@@ -223,9 +226,6 @@ function createMessage (message) {
 		var date = ("0" + dt.getHours()).slice(-2) + ":" + ("0" + dt.getMinutes()).slice(-2);
 		if (!message.draft) bubble.find(".time").text(date).appendTo(bubble.find(".body"))
 	}
-
-	bubble.attr("title", message.subject);
-	bubble.find(".body").html(fixLinks(message.text))
 
 	bubble.addClass(message.from == user ? "me" : "you")
 	bubble.find((message.from == user ? ".left-arrow" : ".right-arrow")).remove()
