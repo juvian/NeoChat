@@ -4,6 +4,7 @@ var user = $(".user a:eq(0)").text();
 var data;
 var ui;
 var time = new timeago();
+const JQ = $;
 
 var fakeUser = {topic : "Hi"};
 var pendingUser = null;
@@ -22,6 +23,7 @@ const conf = {
 };
 
 
+const isFirefox = this.browser !== undefined;
 
 
 chrome.storage.onChanged.addListener(function (changes, name) {
@@ -174,8 +176,8 @@ function processSideBar () {
 	
 		$("div[align='center']").filter(function(){return $(this).text().indexOf("neochat |") != -1}).eq(0).next().after(ui).prevUntil("b").remove();
 		
-		$('.list-users').niceScroll(conf);
-	    $('body').niceScroll(conf);
+		JQ('.list-users').niceScroll(conf);
+	    JQ('body').niceScroll(conf);
 
 	    
 	    chat.chatTemplate.find(".smilies").append(Object.keys(smiliesToText).map(v => $(`<div class = 'smilie' data-text = '${smiliesToText[v]}'><img src = '${v}'></img></div>`).get(0)))
@@ -406,21 +408,27 @@ function selectUser (li) {
 			if (name) {
 				chrome.runtime.sendMessage({type : "updateTemplate", user : user, name: name, message: ui.find(".write-template textarea").val()});
 			}
-		})
+		});
 
-		$('.chat textarea').niceScroll(lol);
-		$('.messages').niceScroll(lol);
+		JQ('.chat textarea').niceScroll(lol);
+		JQ('.messages').niceScroll(lol);
 
 		$(".ui .top .trades").children("img").attr("src", chrome.extension.getURL("images/trades.png"));
 		$(".ui .top .auctions").children("img").attr("src", chrome.extension.getURL("images/auctions.png"));
-
 	}
 }
 
 function showBytesInUse () {
-	chrome.storage.local.getBytesInUse(null, function(v) {
-		$(".configuration .storage-used").text("Used " + formatBytes(v, 2)); // + " / " + formatBytes(chrome.storage.local.QUOTA_BYTES, 2));	
-	})
+	if (isFirefox) {
+		browser.storage.local.get().then(function(d) {
+			const bytes = new TextEncoder().encode(Object.entries(d).map(([key, value]) => key + JSON.stringify(value)).join('')).length;
+			$(".configuration .storage-used").text("Used " + formatBytes(bytes, 2));
+		})
+	} else {
+		chrome.storage.local.getBytesInUse(null, function(v) {
+			$(".configuration .storage-used").text("Used " + formatBytes(v, 2)); // + " / " + formatBytes(chrome.storage.local.QUOTA_BYTES, 2));	
+		})
+	}
 }
 
 

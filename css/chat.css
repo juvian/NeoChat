@@ -157,6 +157,10 @@ body {
     overflow-x: hidden;
 }
 
+.messages {
+  scrollbar-width: none; /*FF */
+}
+
 .messages::-webkit-scrollbar { 
   width: 0 !important;
   display: none !important; 

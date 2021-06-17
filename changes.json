@@ -142,5 +142,12 @@
     "data": [
       "Fixed dates not showing in messages"
     ]
+  },
+  {
+    "version": "1.2.5",
+    "date": "6/17/2021",
+    "data": [
+      "Add Firefox support"
+    ]
   }
 ]

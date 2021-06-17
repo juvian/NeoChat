@@ -9,17 +9,19 @@ function changeNeoChatUser (user, tab) {
 	chrome.tabs.sendMessage(tab.id, {type : "changeUser", user : user})
 }
 
-function goToNeoChat(user) {
-  chrome.tabs.getAllInWindow(undefined, function(tabs) {
+function tabsCallback(user, tabs) {
     for (var i = 0, tab; tab = tabs[i]; i++) {
       if (tab.url && tab.url.indexOf("http://www.neopets.com/neomessages.phtml?folder=neochat") != -1) {
-        chrome.tabs.update(tab.id, {selected: true}, changeNeoChatUser.bind(this, user));
+        chrome.tabs.update(tab.id, {active: true}, changeNeoChatUser.bind(this, user));
         return;
       }
     }
     chrome.tabs.create({url: "http://www.neopets.com/neomessages.phtml?folder=neochat"});
     userPending = user;
-  });
+}
+
+function goToNeoChat(user) {
+  this.browser ? browser.tabs.query({currentWindow: true}).then(tabsCallback.bind(this, user)) : chrome.tabs.getAllInWindow(undefined, tabsCallback.bind(this, user));	 
 }
 
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
