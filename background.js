@@ -11,12 +11,12 @@ function changeNeoChatUser (user, tab) {
 
 function tabsCallback(user, tabs) {
     for (var i = 0, tab; tab = tabs[i]; i++) {
-      if (tab.url && tab.url.indexOf("http://www.neopets.com/neomessages.phtml?folder=neochat") != -1) {
+      if (tab.url && tab.url.indexOf("://www.neopets.com/neomessages.phtml?folder=neochat") != -1) {
         chrome.tabs.update(tab.id, {active: true}, changeNeoChatUser.bind(this, user));
         return;
       }
     }
-    chrome.tabs.create({url: "http://www.neopets.com/neomessages.phtml?folder=neochat"});
+    chrome.tabs.create({url: "https://www.neopets.com/neomessages.phtml?folder=neochat"});
     userPending = user;
 }
 
@@ -25,7 +25,7 @@ function goToNeoChat(user) {
 }
 
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
-    if (tab.url == "http://www.neopets.com/neomessages.phtml?folder=neochat" && changeInfo.status == 'complete' && userPending) {
+    if (tab.url && tab.url.indexOf("://www.neopets.com/neomessages.phtml?folder=neochat") != -1 && changeInfo.status == 'complete' && userPending) {
         chrome.tabs.update(tab.id, {selected: true}, changeNeoChatUser.bind(this, userPending));
         userPending = null;
     }
@@ -41,7 +41,7 @@ function defaultData(user) {
 function noop () {}
 
 var contextMenu = chrome.contextMenus.create({
-	targetUrlPatterns : ["http://www.neopets.com/randomfriend.phtml*", "http://www.neopets.com/userlookup.phtml*"],
+	targetUrlPatterns : ["*://www.neopets.com/randomfriend.phtml*", "*://www.neopets.com/userlookup.phtml*"],
 	title : "Neochat user",
 	contexts : ["link"],
 	type : "normal",
@@ -213,9 +213,9 @@ var requestCache = {}
 
 chrome.webRequest.onBeforeRequest.addListener(
 	function(details) {
-		if (details.url == "http://www.neopets.com/process_neomessages.phtml" && details.method == "POST" && details.requestBody && details.requestBody.raw) console.log(details)
+		if (details.url.indexOf("://www.neopets.com/process_neomessages.phtml") != -1 && details.method == "POST" && details.requestBody && details.requestBody.raw) console.log(details)
 			
-  		if (details.url == "http://www.neopets.com/process_neomessages.phtml" && details.method == "POST" && details.requestBody && details.requestBody.formData && details.requestBody.formData.recipient[0]) {
+  		if (details.url.indexOf("://www.neopets.com/process_neomessages.phtml") != -1 && details.method == "POST" && details.requestBody && details.requestBody.formData && details.requestBody.formData.recipient[0]) {
   			requestCache[details.requestId] = details;
 			setTimeout(function(){
 				delete requestCache[details.requestId];
@@ -223,32 +223,32 @@ chrome.webRequest.onBeforeRequest.addListener(
   		}
 
 	}, 
-	{urls: ["http://www.neopets.com/process_neomessages.phtml"]},
+	{urls: ["*://www.neopets.com/process_neomessages.phtml"]},
 	["requestBody"]
 );
 
 chrome.webRequest.onCompleted.addListener(
 	function(details) {
-		if(details.url == "http://www.neopets.com/process_neomessages.phtml" && details.method == "POST" && details.statusCode == 200 && requestCache.hasOwnProperty(details.requestId)) {
+		if(details.url.indexOf("://www.neopets.com/process_neomessages.phtml") != -1 && details.method == "POST" && details.statusCode == 200 && requestCache.hasOwnProperty(details.requestId)) {
 			var cache = requestCache[details.requestId]
 			saveMessage(cache, false);
 		}
 	}, 
-	{urls: ["http://www.neopets.com/process_neomessages.phtml"]}
+	{urls: ["*://www.neopets.com/process_neomessages.phtml"]}
 )
 
 chrome.webRequest.onBeforeRedirect.addListener(
 	function (details) {
-		if (details.url == "http://www.neopets.com/process_neomessages.phtml" && details.method == "POST" && details.statusCode == 302 && requestCache.hasOwnProperty(details.requestId)) {
+		if (details.url.indexOf("://www.neopets.com/process_neomessages.phtml") != -1 && details.method == "POST" && details.statusCode == 302 && requestCache.hasOwnProperty(details.requestId)) {
 			var cache = requestCache[details.requestId]
 			saveMessage(cache, true);
 		}
 	},
-	{urls: ["http://www.neopets.com/process_neomessages.phtml"]}
+	{urls: ["*://www.neopets.com/process_neomessages.phtml"]}
 );
 
 function saveMessage(cache, success) {
-	chrome.cookies.get({url : "http://www.neopets.com", name : "neologin"}, function (result) {
+	chrome.cookies.get({url : "https://www.neopets.com", name : "neologin"}, function (result) {
 		var user = decodeURIComponent(result.value).split("+")[0];
 
 		var d = new Date(Math.floor(cache.timeStamp));

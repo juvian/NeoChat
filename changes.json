@@ -149,5 +149,12 @@
     "data": [
       "Add Firefox support"
     ]
+  },
+  {
+    "version": "1.2.6",
+    "date": "7/19/2021",
+    "data": [
+      "Added https compatibility"
+    ]
   }
 ]
