@@ -156,5 +156,12 @@
     "data": [
       "Added https compatibility"
     ]
+  },
+  {
+    "version": "1.2.7",
+    "date": "7/20/2021",
+    "data": [
+      "Fix sending emails from neochat"
+    ]
   }
 ]

@@ -378,7 +378,7 @@ function selectUser (li) {
 			form.find(".subject").val(subject)
 			form.find(".recipient").val(username)
 
-			$.post("://www.neopets.com/process_neomessages.phtml", new URLSearchParams(new FormData(form.get(0))).toString()).success(function(html){
+			$.post("//www.neopets.com/process_neomessages.phtml", new URLSearchParams(new FormData(form.get(0))).toString()).success(function(html){
 				if ($(html).find(".errormess").length) {
 					makeToast("error", null, $(html).find(".errormess .errormess .errormess").html().split("<br>")[0]);
 					ui.find(".write-message textarea").val(message)
@@ -496,6 +496,6 @@ function initChat () {
 	ui.append(chat.chatTemplate.clone());
 
 	ui.find(".user-info .avatar").click(function(){
-		chrome.runtime.sendMessage({type : "newTab", url : "://www.neopets.com/userlookup.phtml?user=" +  ui.find("li.active").attr("data-username")});
+		window.open("//www.neopets.com/userlookup.phtml?user=" +  ui.find("li.active").attr("data-username"))
 	});
 }

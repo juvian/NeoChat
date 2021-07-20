@@ -55,8 +55,6 @@ var contextMenu = chrome.contextMenus.create({
 function processMessage (request, sender, sendResponse) {	
 	if (request.type == "contextMenu") {
 		chrome.contextMenus.update(contextMenu, {title : "Neochat " + request.user})
-	} else if (request.type == "newTab") {
-		chrome.tabs.create({ url : request.url });
 	} else if (!data[request.user]) {
 		initialize(request, processMessage.bind(this, request, sender, sendResponse));
 	} else {
