@@ -377,15 +377,14 @@ function selectUser (li) {
 			form.find(".message_body").val(message)
 			form.find(".subject").val(subject)
 			form.find(".recipient").val(username)
-
-			$.post("//www.neopets.com/process_neomessages.phtml", new URLSearchParams(new FormData(form.get(0))).toString()).success(function(html){
+			fetch(window.location.protocol+'//www.neopets.com/process_neomessages.phtml', {method: 'POST', body: new URLSearchParams(new FormData(form.get(0)))}).then(r => r.text()).then(html => {
 				if ($(html).find(".errormess").length) {
 					makeToast("error", null, $(html).find(".errormess .errormess .errormess").html().split("<br>")[0]);
 					ui.find(".write-message textarea").val(message)
 				} else {
 					makeToast('success', null, "Message sent");
 				}
-			}).error(function () {
+			}).catch(function () {
 				makeToast('error', null, "Network error, try again later");
 				ui.find(".write-message textarea").val(message);
 			})

@@ -45,7 +45,7 @@ var message = {
 	subject : table.find("tr:eq(3) td:eq(1)").text()
 }
 
-setData(table.find("tr:eq(4) td:eq(1)"), message);
+setData(table.find("tr:last-child td:eq(1)"), message);
 
 
 

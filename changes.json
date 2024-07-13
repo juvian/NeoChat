@@ -163,5 +163,12 @@
     "data": [
       "Fix sending emails from neochat"
     ]
+  },
+  {
+    "version": "1.2.9",
+    "date": "12/7/2024",
+    "data": [
+      "Fix the wrong message being saved caused by tnt fixing the show your previous message"
+    ]
   }
 ]

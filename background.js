@@ -117,6 +117,11 @@ function processMessage (request, sender, sendResponse) {
 
 			if (from.name == null) from.name = request.name;
 			if (from.image == null) from.image = request.image;
+			
+			//fix wrong text saved by show reply fix tnt did on July 10th
+			if (from.messages[request.messageID].text != request.message.text && request.message.date >= new Date("2024-07-06T00:00:00") && request.message.date <= new Date("2024-09-06T00:00:00")) {
+				from.messages[request.messageID].text = request.message.text;
+			}
 
 			from.name = from.name.trim().toLowerCase()
 
