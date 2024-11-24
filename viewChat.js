@@ -365,29 +365,44 @@ function selectUser (li) {
 
 			ui.find(".write-message textarea").val("")
 
-			var form = $(`<form name="neomessage" action="process_neomessages.phtml" method="post">
-						<input class="recipient" type="text" name="recipient"/>
-						<input class = "subject" type="text" name="subject"/>
-						<select name="message_type" onchange="update_title()">
-							<option value="notitle" selected>notitle</option>
-						</select>
-						<input type="text" name="neofriends"/>
-						<textarea name="message_body" class="message_body"></textarea>`);
+			const msgArgs = {
+				recipient: username,
+				subject,
+				message_type: 'notitle',
+				neofriends: null,
+				message_body: message,
+			};
 
-			form.find(".message_body").val(message)
-			form.find(".subject").val(subject)
-			form.find(".recipient").val(username)
-			fetch(window.location.protocol+'//www.neopets.com/process_neomessages.phtml', {method: 'POST', body: new URLSearchParams(new FormData(form.get(0)))}).then(r => r.text()).then(html => {
-				if ($(html).find(".errormess").length) {
-					makeToast("error", null, $(html).find(".errormess .errormess .errormess").html().split("<br>")[0]);
-					ui.find(".write-message textarea").val(message)
-				} else {
-					makeToast('success', null, "Message sent");
+			(async () => {
+				try {
+					// content.fetch fixes firefox not sending neomails. The 'referer' header is stripped in firefox
+					// when using the regular 'fetch' method due to some add-on/extension permissioning issues. Using
+					// content.fetch instead retaing the 'referer' header, which Neopets uses to redirect from the POST.
+					// The main issue is that Neopets returns a 200 from the regular fetch for firefox because it assumnes
+					// that the request is made being off-site due to a missing 'referer' header.
+					const fetchToUse = content?.fetch || fetch;
+					const resp = await fetch(window.location.protocol+'//www.neopets.com/process_neomessages.phtml', {
+						method: 'POST',
+						body: new URLSearchParams(msgArgs),
+						redirect: 'manual',
+						mode: 'cors',
+						headers: {
+							referer: 'https://www.neopets.com'
+						}
+					});
+
+					const html = await resp.text();
+					if ($(html).find(".errormess").length) {
+						makeToast("error", null, $(html).find(".errormess").html().split("<br>")[0]);
+						ui.find(".write-message textarea").val(message);
+					} else {
+						makeToast('success', null, "Message sent");
+					}
+				} catch (e) {
+					makeToast('error', null, "Network error, try again later");
+					ui.find(".write-message textarea").val(message);
 				}
-			}).catch(function () {
-				makeToast('error', null, "Network error, try again later");
-				ui.find(".write-message textarea").val(message);
-			})
+			})();
 		})
 
 		ui.find(".user-actions .erase").click(function () {
