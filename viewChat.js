@@ -382,8 +382,6 @@ function selectUser (li) {
 					// The main issue is that Neopets returns a 200 from the regular fetch for firefox
 					// because it assumns that the request is made being off-site due to a missing 'referer' header.
 					const fetchToUse = content?.fetch || fetch;
-
-					console.log(content?.fetch ? 'using content.fetch' : 'using fetch');
 					const resp = await fetchToUse(window.location.protocol+'//www.neopets.com/process_neomessages.phtml', {
 						method: 'POST',
 						body: new URLSearchParams(msgArgs),
