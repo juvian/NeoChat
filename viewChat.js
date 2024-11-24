@@ -375,13 +375,16 @@ function selectUser (li) {
 
 			(async () => {
 				try {
-					// content.fetch fixes firefox not sending neomails. The 'referer' header is stripped in firefox
-					// when using the regular 'fetch' method due to some add-on/extension permissioning issues. Using
-					// content.fetch instead retaing the 'referer' header, which Neopets uses to redirect from the POST.
-					// The main issue is that Neopets returns a 200 from the regular fetch for firefox because it assumnes
-					// that the request is made being off-site due to a missing 'referer' header.
+					// content.fetch fixes firefox not sending neomails. The 'referer'
+					// header is stripped in firefox when using the regular 'fetch' method
+					// due to some add-on/extension permissioning issues. Using content.fetch
+					// instead retaing the 'referer' header, which Neopets uses to redirect from the POST.
+					// The main issue is that Neopets returns a 200 from the regular fetch for firefox
+					// because it assumns that the request is made being off-site due to a missing 'referer' header.
 					const fetchToUse = content?.fetch || fetch;
-					const resp = await fetch(window.location.protocol+'//www.neopets.com/process_neomessages.phtml', {
+
+					console.log(content?.fetch ? 'using content.fetch' : 'using fetch');
+					const resp = await fetchToUse(window.location.protocol+'//www.neopets.com/process_neomessages.phtml', {
 						method: 'POST',
 						body: new URLSearchParams(msgArgs),
 						redirect: 'manual',
