@@ -4,7 +4,7 @@
   "short_name": "Neopets Chat",
   "name" : "Neopets mail enhancer",
   "description": "This extension improves neopets inbox and view/reply messages",
-  "version": "1.2.9",
+  "version": "1.2.11",
 	"content_scripts": [
 	    {
 	      "matches": ["*://www.neopets.com/neomessages.phtml?type=read_message&folder=Inbox&id=*"],
@@ -45,5 +45,6 @@
   ],
   "background": {
     "scripts": ["js/smilies.js", "background.js"]
-  }
+  },
+  "browser_specific_settings": {"gecko": {"id": "{8fcd5992-ef4d-4f0b-bd9c-379b527f036b}"}}
 }

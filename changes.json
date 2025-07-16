@@ -170,5 +170,12 @@
     "data": [
       "Fix the wrong message being saved caused by tnt fixing the show your previous message"
     ]
+  },
+  {
+    "version": "1.2.11",
+    "date": "16/7/2025",
+    "data": [
+      "Fix import on firefox"
+    ]
   }
 ]

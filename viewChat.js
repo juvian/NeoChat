@@ -441,10 +441,10 @@ function initConfiguration () {
 	})
 
 	$(".configuration").find("input").change(function(e) {
-		if (event.target.files && this.value.match(/\.([^\.]+)$/)[1] == "json") {
+		if (e.target.files && this.value.match(/\.([^\.]+)$/)[1] == "json") {
 			var reader = new FileReader();
 	        reader.onload = importData;
-	        reader.readAsText(event.target.files[0]);
+	        reader.readAsText(e.target.files[0]);
 		}
 	})
 
