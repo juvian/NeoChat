@@ -177,5 +177,12 @@
     "data": [
       "Fix import on firefox"
     ]
+  },
+  {
+    "version": "1.4.1",
+    "date": "8/7/2026",
+    "data": [
+      "Migrated extension to manifest v3"
+    ]
   }
 ]

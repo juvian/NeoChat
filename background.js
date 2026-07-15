@@ -1,3 +1,7 @@
+if (typeof importScripts === "function") {
+	importScripts("js/smilies.js");
+}
+
 chrome.runtime.onMessage.addListener(processMessage);
 chrome.runtime.onInstalled.addListener(processInstall);
 
@@ -21,7 +25,7 @@ function tabsCallback(user, tabs) {
 }
 
 function goToNeoChat(user) {
-  this.browser ? browser.tabs.query({currentWindow: true}).then(tabsCallback.bind(this, user)) : chrome.tabs.getAllInWindow(undefined, tabsCallback.bind(this, user));	 
+  chrome.tabs.query({currentWindow: true}, tabsCallback.bind(this, user));
 }
 
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {

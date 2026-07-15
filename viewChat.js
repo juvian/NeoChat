@@ -428,8 +428,8 @@ function selectUser (li) {
 		JQ('.chat textarea').niceScroll(lol);
 		JQ('.messages').niceScroll(lol);
 
-		$(".ui .top .trades").children("img").attr("src", chrome.extension.getURL("images/trades.png"));
-		$(".ui .top .auctions").children("img").attr("src", chrome.extension.getURL("images/auctions.png"));
+		$(".ui .top .trades").children("img").attr("src", chrome.runtime.getURL("images/trades.png"));
+		$(".ui .top .auctions").children("img").attr("src", chrome.runtime.getURL("images/auctions.png"));
 	}
 }
 
